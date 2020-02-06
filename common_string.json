@@ -1,0 +1,42 @@
+{
+  "messages": {
+    "en": {
+        "ALREADY_LOGIN":"Already login in another device",
+        "EMPTY_DATA":"Response is empty",
+        "ERROR_CREATE": "Error while adding record",
+        "ERROR_DELETE": "Error while deleting data",
+        "ERROR_FETCH": "Error while fetching data",
+        "INACTIVE_RECORD":"Inactive by admin",
+        "LOGIN_SUCCESS":"Login successfully",
+        "NOT_FOUND":"Data not found",
+        "PASSWORD_NOT_MATCHED":"Password not matched",
+        "SOMETHING_WRONG":"Something went wrong",
+        "SUCCESS_DELETE": "Successfully deleted",
+        "SUCCESS_FETCH": "Successfully fetched",
+        "SUCCESS_INSERT": "Successfully inserted",
+        "SUCCESS_UPDATE": "Successfully updated",
+        "WRONG_DATA":"Wrong data or format",
+        "VISIT_ALREADY_RUNNING":"A visit of this employee is already running",
+        "WRONG_STATUS":"status is wrong"
+    },
+    "ar": {
+        "ALREADY_LOGIN":"Already login",
+        "EMPTY_DATA":"Response is empty",
+        "ERROR_CREATE": "Error while adding record",
+        "ERROR_DELETE": "Error while deleting data",
+        "ERROR_FETCH": "Error while fetching data",
+    	"INACTIVE_RECORD":"Inactive by admin",
+    	"LOGIN_SUCCESS":"Login successfully",
+    	"NOT_FOUND":"Data not found",
+    	"PASSWORD_NOT_MATCHED":"Password not matched",
+        "SOMETHING_WRONG":"Something went wrong",
+        "SUCCESS_DELETE": "Successfully deleted",
+    	"SUCCESS_FETCH": "Successfully fetched",
+        "SUCCESS_INSERT": "Successfully inserted",
+        "SUCCESS_UPDATE": "Successfully updated",
+    	"WRONG_DATA":"Wrong data or format",
+        "VISIT_ALREADY_RUNNING":"A visit of this employee is already running",
+        "WRONG_STATUS":"status is wrong"
+    }
+  }
+}
