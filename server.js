@@ -66,6 +66,15 @@ app.post('/employee/addItemsToSalesCart', routes.add_items_to_sales_cart);
 app.post('/employee/salesCartItemsList', routes.sales_cart_items_list);
 app.post('/employee/deleteSalesCartItems', routes.delete_sales_cart_items);
 app.post('/employee/deleteAllSalesCartItems', routes.delete_all_sales_cart_items);
+
+
+/* 
+	updating features for invoice and return invoice
+	by: Habibur Rahman	
+
+*/
+app.post('/employee/adjustItemsFromSalesCart', routes.adjust_items_from_sales_cart);
+
 /*Sahil @16-april-19 ends*/
 app.post('/employee/editSalesCartItem', routes.edit_sales_cart_items);
 app.post('/employee/allItemsAccordinToCustomerPrice', routes.all_items_according_customer_price);
