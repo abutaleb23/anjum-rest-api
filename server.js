@@ -74,6 +74,7 @@ app.post('/employee/deleteAllSalesCartItems', routes.delete_all_sales_cart_items
 
 */
 app.post('/employee/adjustItemsFromSalesCart', routes.adjust_items_from_sales_cart);
+app.post('/employee/customers-payment-method', routes.customer_payment_method)
 
 /*Sahil @16-april-19 ends*/
 app.post('/employee/editSalesCartItem', routes.edit_sales_cart_items);
