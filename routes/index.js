@@ -6298,27 +6298,16 @@ exports.sales_order_request_submit = function(req, res) {
 	console.log(req.body);
 
 	if (
-		req.body.sales_order_arr &&
-		req.body.user_id != "" &&
-		req.body.user_id != null &&
-		req.body.employee_id != "" &&
-		req.body.employee_id != null &&
-		req.body.customer_id != "" &&
-		req.body.customer_id != null &&
-		req.body.supervisor_id != "" &&
-		req.body.supervisor_id != null &&
-		req.body.store_id != "" &&
-		req.body.store_id != null &&
-		req.body.level != "" &&
-		req.body.level != null
-	) {
-		var sales_order_arr = [];
-
-		if (!Array.isArray(req.body.sales_order_arr)) {
-			sales_order_arr = [req.body.sales_order_arr];
-		} else {
-			sales_order_arr = req.body.sales_order_arr;
-		}
+		req.body.sales_order_arr && req.body.user_id != "" && req.body.user_id != null &&
+		req.body.employee_id != "" && req.body.employee_id != null && req.body.customer_id != "" &&
+		req.body.customer_id != null && req.body.supervisor_id != "" && req.body.supervisor_id != null &&
+		req.body.store_id != "" && req.body.store_id != null && req.body.level != "" &&
+		req.body.level != null ) {
+  
+    let sales_order_arr = [];
+    
+		if (!Array.isArray(req.body.sales_order_arr)) sales_order_arr = [req.body.sales_order_arr];
+		else sales_order_arr = req.body.sales_order_arr;
 
 		let create_sales = {};
 
@@ -6330,17 +6319,10 @@ exports.sales_order_request_submit = function(req, res) {
 		create_sales.supervisor_id = req.body.supervisor_id;
 		create_sales.no_of_items = sales_order_arr.length;
 
-		if (
-			req.body.level > 1 &&
-			(req.body.salesmanager_id == null || req.body.salesmanager_id == "")
-		) {
-			res.end(
-				JSON.stringify({
-					response: 2,
-					message: Messages["en"].WRONG_DATA
-				})
-			);
-		} else if (req.body.level > 1) {
+		if ( req.body.level > 1 && (req.body.salesmanager_id == null || req.body.salesmanager_id == "") ) {
+			res.end( JSON.stringify({ response: 2, message: Messages["en"].WRONG_DATA }));
+    } 
+    else if (req.body.level > 1) {
 			create_sales.salesmanager_id = req.body.salesmanager_id;
 			create_sales.salesmanager_status = "pending";
 		}
@@ -6357,10 +6339,11 @@ exports.sales_order_request_submit = function(req, res) {
 				? "return_invoice"
 				: "sales";
 
-		Models.SalesOrderRequest.create(create_sales).then(
-			async salesOrderRequest => {
+    Models.SalesOrderRequest.create(create_sales)
+    .then( async salesOrderRequest => {
+        console.log("Created successfully ============>", salesOrderRequest)
 				if (salesOrderRequest.id) {
-					console.log("q step 1 sales order request id", salesOrderRequest.id);
+          console.log("q step 1 sales order request id", salesOrderRequest.id);
 					let request_id = salesOrderRequest.id;
 					var sales_order_arr_quantity = "true";
 					var timeline_content_type =
@@ -6369,78 +6352,6 @@ exports.sales_order_request_submit = function(req, res) {
 							: req.body.request_type == "return_invoice"
 							? "return_invoice_order"
 							: "sales_order";
-					// for(var k = 0; k < sales_order_arr.length; k++) {
-
-					// 	if(sales_order_arr[i].item_id && sales_order_arr[i].measurement_unit_id && sales_order_arr[i].quantity){
-
-					// 		if (req.body.request_type=="invoice") {
-					// 			Models.StockItems.findOne({
-					// 				where:{
-					// 					user_id:req.body.user_id,
-					// 					store_id:req.body.store_id,
-					// 					item_id:sales_order_arr[i].item_id,
-					// 					measurement_unit_id:sales_order_arr[i].measurement_unit_id,
-					// 				}
-					// 			}).then(stockItemData =>{
-					// 				if (stockItemData.quantity>=sales_order_arr[i].quantity) {
-					// 					sales_order_arr_quantity = "true";
-					// 				}else{
-					// 					sales_order_arr_quantity = "false";
-					// 				}
-					// 			},error =>{
-					// 				res.end(JSON.stringify({
-					//                        response: 0,
-					//                        message: Messages['en'].ERROR_FETCH
-					//                    }));
-					// 			})
-					// 		}
-
-					// 		if (sale_req_detail.sales_order_promotions_arr.length>0) {
-					// 			console.log('if promo data  -----------------------------',sale_req_detail.sales_order_promotions_arr);
-					// 			for (var l = 0; l < sale_req_detail.sales_order_promotions_arr.length; l++) {
-
-					// 			}
-					// 		}
-					// 	}
-					// }
-
-					// Models.Timelines.create({
-					//      		content_id:salesOrderRequest.id,
-					//      		content_type:timeline_content_type,
-					//      		user_id:req.body.user_id,
-					//      		employee_id:req.body.employee_id,
-					//      		customer_id:req.body.customer_id,
-					//      		battery_life:req.body.battery_life,
-					//      		android_version:req.body.android_version,
-					//      		latitude:req.body.latitude,
-					//      		longitude:req.body.longitude,
-					//      	}).then(addTimeline => {
-					//       	let gcm_obj = {};
-					// 	gcm_obj.req_type = 'load',gcm_obj.action = 'request';
-					// 	// try{
-					// 		if(create_load.supervisor_id != null && create_load.supervisor_id != ""){
-					// 			console.log('supervisor_id ===================',create_load.supervisor_id)
-					// 			Models.GcmDevices.findOne({
-					// 				where:{
-					// 					employee_id:create_load.supervisor_id
-					// 				}
-					// 			}).then(gcmDev => {
-					// 				console.log('supervisor_id sending notify',gcmDev)
-					// 				if(gcmDev != null && gcmDev.device_token != null){
-					// 					console.log("push notification function ======================")
-					// 					_sendPushNotificationAndroid(gcmDev.device_token, 'Load Request', 'You have a new load request', gcm_obj);
-					// 				}else{
-					// 					console.log('data is null in gcmDev supervisor');
-					// 				}
-					// 			},error => {
-					// 				console.log('error in sending notification');
-					// 			})
-					// 		}
-					//        	console.log('invoice added in timeline =============');
-					//      	},error => {
-					//        	console.log('error while adding invoice in timeline =============');
-					//      		console.log('error in add timeline', error);
-					//      	})
 
 					for (var i = 0; i < sales_order_arr.length; i++) {
 						console.log("q step 2");
@@ -6466,15 +6377,6 @@ exports.sales_order_request_submit = function(req, res) {
 							create_sales_req.quantity = sales_order_arr[i].quantity;
 							create_sales_req.base_price_per_unit =
 								sales_order_arr[i].base_price_per_unit;
-
-							// if(sales_order_arr[i].discount_percentage != "" && sales_order_arr[i].discount_percentage != null){
-							// 	create_sales_req.discount_percentage =  sales_order_arr[i].discount_percentage;
-							// }
-
-							// if(sales_order_arr[i].discount_amount != "" && sales_order_arr[i].discount_amount != null){
-							// 	create_sales_req.discount_amount =  sales_order_arr[i].discount_amount;
-							// }
-
 							create_sales_req.total_price = sales_order_arr[i].total_price;
 							create_sales_req.total_price_before_tax =
 								sales_order_arr[i].total_price_before_tax;
@@ -6496,31 +6398,9 @@ exports.sales_order_request_submit = function(req, res) {
 								create_sales_req.bonus = sales_order_arr[i].bonus;
 							}
 
-							// if(sales_order_arr[i].promotion_id != null && sales_order_arr[i].promotion_id != ""){
-							// 	create_sales_req.promotion_id = sales_order_arr[i].promotion_id;
-							// }
+							console.log("prom length====================", sale_req_detail.sales_order_promotions_arr);
 
-							// if(sales_order_arr[i].promotion_type != null && sales_order_arr[i].promotion_type != ""){
-							// 	create_sales_req.promotion_type = sales_order_arr[i].promotion_type;
-							// }
-
-							// if(sales_order_arr[i].promotion_bonus_item_id != null && sales_order_arr[i].promotion_bonus_item_id != ""){
-							// 	create_sales_req.promotion_bonus_item_id = sales_order_arr[i].promotion_bonus_item_id;
-							// }
-
-							// if(sales_order_arr[i].promotion_bonus_quantity != null && sales_order_arr[i].promotion_bonus_quantity != ""){
-							// 	create_sales_req.promotion_bonus_quantity = sales_order_arr[i].promotion_bonus_quantity;
-							// }
-							// console.log('sale_req_detail====================',sale_req_detail);
-							console.log(
-								"prom length====================",
-								sale_req_detail.sales_order_promotions_arr
-							);
-
-							if (
-								req.body.request_type == "invoice" &&
-								sales_order_arr[i].quantity != 0
-							) {
+							if (req.body.request_type == "invoice" && sales_order_arr[i].quantity != 0 ) {
 								Models.StockItems.findOne({
 									where: {
 										user_id: req.body.user_id,
@@ -6528,14 +6408,15 @@ exports.sales_order_request_submit = function(req, res) {
 										item_id: sales_order_arr[i].item_id,
 										measurement_unit_id: sales_order_arr[i].measurement_unit_id
 									}
-								}).then(
-									stockItemData => {
+                })
+                .then( stockItemData => {
+                    const habib = sales_order_arr[i];
+                    
 										if (stockItemData.quantity >= sales_order_arr[i].quantity) {
-											console.log(
-												"if sales order quantity ==================="
-											);
-											var remain_quantity =
-												stockItemData.quantity - sales_order_arr[i].quantity;
+                      console.log("if sales order quantity ===================", sales_order_arr[i]);
+                      console.log("sales order arr with habib ==========>", habib)
+                      
+											var remain_quantity = stockItemData.quantity - sales_order_arr[i].quantity;
 											Models.StockItems.update(
 												{
 													quantity: remain_quantity
@@ -6549,9 +6430,15 @@ exports.sales_order_request_submit = function(req, res) {
 															sales_order_arr[i].measurement_unit_id
 													}
 												}
-											).then(
-												updatedStockItemQuantity => {
-													Models.SalesOrderInvoiceRequestStockItems.create({
+                      )
+                      .then( updatedStockItemQuantity => {
+                        if(!sales_order_arr[i]) sales_order_arr[i] = habib
+                          console.log("sales order arr with again habib ==========>", habib)
+                          
+                          console.log("Sales order arr ===============>", sales_order_arr[i])
+                          console.log("updatedStockItemQuantity ==========>", updatedStockItemQuantity[0])
+                          
+                          Models.SalesOrderInvoiceRequestStockItems.create({
 														sales_order_request_id: salesOrderRequest.id,
 														user_id: req.body.user_id,
 														store_id: req.body.store_id,
@@ -6843,8 +6730,10 @@ exports.sales_order_request_submit = function(req, res) {
 															console.log(
 																"cart data ------------------",
 																cartData
-															);
+                              );
+                              console.log('but ekhane kmne ashe =================>')
 															if (cartData != null) {
+                                console.log("ekhane ashse ================>")
 																for (var k = 0; k < cartData.length; k++) {
 																	cart_data = cartData[k];
 																	Models.SalesOrderCartPromotion.destroy({
@@ -6933,6 +6822,7 @@ exports.sales_order_request_submit = function(req, res) {
 											}
 										}).then(
 											cartData => {
+                        console.log('dekhi ekhane ashe ki na')
 												console.log("cart data ------------------", cartData);
 												if (cartData != null) {
 													for (var k = 0; k < cartData.length; k++) {
@@ -6941,12 +6831,13 @@ exports.sales_order_request_submit = function(req, res) {
 															where: {
 																sales_order_cart_id: cart_data.id
 															}
-														}).then(
-															destPromo => {
+														}).then( destPromo => {
+                                console.log("request data =====> ",requestData.item_id)
 																console.log(
 																	"cart promotions deleted Successfully -----------------",
 																	destPromo
-																);
+                                );
+                                
 																Models.SalesOrderCartDetail.destroy({
 																	where: {
 																		user_id: req.body.user_id,
@@ -6997,19 +6888,6 @@ exports.sales_order_request_submit = function(req, res) {
 											}
 										);
 									}
-
-									// Models.SalesOrderCartDetail.destroy({
-									// 	where:{
-									// 		user_id:req.body.user_id,
-									// 		employee_id:req.body.employee_id,
-									// 		customer_id:req.body.customer_id,
-									// 		item_id:requestData.item_id
-									// 	}
-									// }).then(destCart => {
-
-									// },err => {
-									// 	console.log('**!!!! error in destroy sales order request detail !!!!**', error);
-									// });
 								},
 								error => {
 									console.log(
@@ -7043,9 +6921,7 @@ exports.sales_order_request_submit = function(req, res) {
 							}).then(
 								addTimeline => {
 									let notify_title =
-										req.body.request_type == "invoice"
-											? "Invoice Request"
-											: req.body.request_type == "return_invoice"
+										req.body.request_type == "invoice" ? "Invoice Request" : req.body.request_type == "return_invoice"
 											? "Return Invoice Request"
 											: "Sales Order Request";
 									let notify_desc =

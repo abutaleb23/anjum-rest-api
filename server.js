@@ -48,10 +48,13 @@ app.get('/employee/getStores', routes.get_stores);
 app.post('/employee/employeePermissions', routes.get_employee_permissions);
 
 app.post('/employee/getLoadRequestsList', routes.get_load_requests_list);
+// selected
 app.post('/employee/loadRequestChangeStatusSupervisor', routes.load_request_change_status_supervisor);
 app.post('/employee/getParticularItemDetail', routes.get_particular_item_detail);
 app.post('/employee/getAllEmployeesUnderSupervisor', routes.get_all_employees_under_supervisor);
+// selected
 app.post('/employee/supervisorModifyLoadRequestItem', routes.supervisor_modify_load_request_item);
+// selected
 app.post('/employee/getLoadRequestItemsList', routes.get_load_request_items_list);
 
 app.post('/employee/getUnloadRequestsList', routes.get_unload_requests_list);
