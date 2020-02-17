@@ -5055,482 +5055,68 @@ exports.add_items_to_sales_cart = function(req, res) {
 */
 
 exports.adjust_items_from_sales_cart = function(req, res) {
-	// req.body = {
-	// 	"user_id": "7",
-	// 	"employee_id": "13",
-	// 	"customer_id": "88",
-	// 	"item_id": "1",
-	// 	"quantity": "30",
-	// 	"unit_id": "23",
-	// 	"total_price": 1575,
-	// 	"total_price_before_tax": 1500,
-	// 	"total_tax": 75,
-	// 	"base_price_per_unit": 50,
-	// 	"tax_type": "percentage",
-	// 	"total_price_with_tax": 1575,
-	// 	"promotions_data": [{
-	// 	"promotion_id": "76",
-	// 	"promotion_type": "range",
-	// 	"promotion_bonus_item_id": "4",
-	// 	"promotion_bonus_quantity": "40"
-	// 	}, {
-	// 	"promotion_id": "62",
-	// 	"promotion_type": "range",
-	// 	"promotion_bonus_item_id": "4",
-	// 	"promotion_bonus_quantity": "30"
-	// 	}, {
-	// 	"promotion_id": "34",
-	// 	"promotion_type": "package",
-	// 	"discount_type": "value",
-	// 	"discount_amount": "20",
-	// 	"discount_percentage": ""
-	// 	}]
-	// };
 
-	console.log(
-		"adjust items from sales cart data =====================",
-		req.body
-	);
+  // req.body = {
+  //   "user_id": "7", 
+  //   "employee_id": "13", 
+  //   "customer_id": "88", 
+  //   "store_id": "25", 
+  //   "item_id": "4", 
+  //   "measurement_unit_id": "23", 
+  //   "quantity": "30", 
+  //   "bonus_qty": "2"
+  // }
+	console.log( "adjust items from sales cart data =====================", req.body);
+  let { user_id, employee_id, customer_id, store_id, item_id, measurement_unit_id, quantity, bonus_qty} = req.body
+	if ( user_id != null && user_id != "" && item_id != null && item_id != "" &&
+		employee_id != null && employee_id != "" && customer_id != null && customer_id != "" &&
+    quantity != null && quantity != "" ) {
 
-	if (
-		req.body.user_id != null &&
-		req.body.user_id != "" &&
-		req.body.item_id != null &&
-		req.body.item_id != "" &&
-		req.body.employee_id != null &&
-		req.body.employee_id != "" &&
-		req.body.customer_id != null &&
-		req.body.customer_id != "" &&
-		req.body.unit_id != null &&
-		req.body.unit_id != "" &&
-		req.body.quantity != null &&
-		req.body.quantity != "" &&
-		req.body.total_price != null &&
-		req.body.total_price != "" &&
-		req.body.total_price_before_tax != null &&
-		req.body.total_price_before_tax != "" &&
-		req.body.total_tax != null &&
-		req.body.total_tax != "" &&
-		req.body.tax_type != null &&
-		req.body.tax_type != "" &&
-		req.body.base_price_per_unit != null &&
-		req.body.base_price_per_unit != ""
-	) {
-		console.log(
-			"input data >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>",
-			req.body
-		);
-		Models.SalesOrderCartDetail.findOne({
-			where: {
-				user_id: req.body.user_id,
-				employee_id: req.body.employee_id,
-				customer_id: req.body.customer_id,
-				item_id: req.body.item_id
-			}
-		}).then(
-			checkItem => {
-				console.log("checkItem >>>>>>>>>>>>>>>>>>>>", checkItem);
-				if (checkItem == null) {
-					console.log("There was no invoice >>>>>>>>>>>>");
-					res.end(
-						JSON.stringify({ response: 3, message: Messages["en"].NOT_FOUND })
-					);
-				} else {
-					console.log(
-						"update else >>>>>>>>>>>>>>>>>>>>>>>>>>>>",
-						req.body.bonus_qty,
-						req.body.discount
-					);
+    // Finding the product. I will just increase the stock amount 
+    Models.StockItems.findOne({
+      where: {
+        user_id: user_id,
+        store_id: store_id,
+        item_id: item_id,
+        measurement_unit_id: measurement_unit_id
+      }
+    })
+    .then( stockItemData => {
+      let stock_item_data_quantity = stockItemData.quantity
+      if( stockItemData.quantity == null) stock_item_data_quantity = 0;
+      if( bonus_qty == null || bonus_qty == "" ) bonus_qty = 0
 
-					/* 
-					# checking the validity of return invoice fields 
-					# same or less from invoice should be following fields-
-					1. unit id should be same,
-					2. quantity shouldn't be great
-					3. bonus quantity shouldn't be great
-					4. discount shouldn't be great  
-					5. discount percent shouldn't be great
-				
-				*/
-
-					// unit id
-					if (checkItem.unit_id != req.body.unit_id) {
-						res.end(
-							JSON.stringify({
-								response: 2,
-								message: "Please select proper unit id of this invoice"
-							})
-						);
-					}
-					// quantity
-					else if (checkItem.quantity < req.body.quantity) {
-						res.end(
-							JSON.stringify({
-								response: 2,
-								message: "Quantity should be less than" + checkItem.quantity
-							})
-						);
-					}
-					// bonus quantity
-					else if (
-						req.body.bonus_qty != null &&
-						req.body.bonus_qty != "" &&
-						checkItem.bonus != null &&
-						checkItem.bonus < req.body.bonus_qty
-					) {
-						res.end(
-							JSON.stringify({
-								response: 2,
-								message: "Bonus Quantity should be less than" + checkItem.bonus
-							})
-						);
-					} else if (
-						req.body.bonus_qty != null &&
-						req.body.bonus_qty != "" &&
-						checkItem.bonus == null &&
-						req.body.bonus_qty > 0
-					) {
-						res.end(
-							JSON.stringify({ response: 2, message: "Quantity should be 0" })
-						);
-					}
-					// discount
-					else if (
-						req.body.discount != null &&
-						req.body.discount != "" &&
-						checkItem.discount != null &&
-						checkItem.discount < req.body.discount
-					) {
-						res.end(
-							JSON.stringify({
-								response: 2,
-								message: "Discount should be less than" + checkItem.discount
-							})
-						);
-					} else if (
-						req.body.discount != null &&
-						req.body.discount != "" &&
-						checkItem.discount == null &&
-						req.body.discount > 0
-					) {
-						res.end(
-							JSON.stringify({ response: 2, message: "Discount should be 0" })
-						);
-					}
-					// discount percent
-					else if (
-						req.body.discount_percent != null &&
-						req.body.discount_percent != "" &&
-						checkItem.discount_percent != null &&
-						checkItem.discount_percent < req.body.discount_percent
-					) {
-						res.end(
-							JSON.stringify({
-								response: 2,
-								message:
-									"Discount Percent should be less than" +
-									checkItem.discount_percent
-							})
-						);
-					} else if (
-						req.body.discount_percent != null &&
-						req.body.discount_percent != "" &&
-						checkItem.discount_percent == null &&
-						req.body.discount_percent > 0
-					) {
-						res.end(
-							JSON.stringify({
-								response: 2,
-								message: "Discount Percent should be 0"
-							})
-						);
-					}
-					// base price per unit should be exactly same
-					else if (
-						req.body.base_price_per_unit != checkItem.base_price_per_unit
-					) {
-						res.end(
-							JSON.stringify({
-								response: 2,
-								message:
-									"Base price per unit should be equal to" +
-									checkItem.base_price_per_unit
-							})
-						);
-					}
-					// tax type should be same
-					else if (req.body.tax_type != checkItem.tax_type) {
-						res.end(
-							JSON.stringify({
-								response: 2,
-								message: "Tax type should be same"
-							})
-						);
-					} else {
-						const update_sales = {};
-						update_sales.unit_id = req.body.unit_id;
-						update_sales.quantity = checkItem.quantity - req.body.quantity;
-
-						const c_bonus = req.body.bonus_qty ? req.body.bonus_qty : null;
-						const c_discount = req.body.discount ? req.body.discount : null;
-						const c_discount_percent = req.body.discount_percent
-							? req.body.discount_percent
-							: null;
-
-						if (c_bonus != null && checkItem.bonus != null)
-							update_sales.bonus = checkItem.bonus - c_bonus;
-						else update_sales.bonus = c_bonus;
-
-						if (c_discount != null && checkItem.discount != null)
-							update_sales.discount = checkItem.discount - c_discount;
-						else update_sales.discount = c_discount;
-
-						if (
-							c_discount_percent != null &&
-							checkItem.discount_percent != null
-						)
-							update_sales.discount_percent =
-								checkItem.discount_percent - c_discount_percent;
-						else update_sales.discount_percent = c_discount_percent;
-
-						/* 
-						# base price per unit should be equal to invoice base price per unit
-						# as equal so comes here after validation
-					*/
-						update_sales.base_price_per_unit = req.body.base_price_per_unit;
-
-						/*
-						# total price should be subtraction of invoice and return invoice
-					*/
-						update_sales.total_price =
-							checkItem.total_price - req.body.total_price;
-						update_sales.total_price_before_tax =
-							checkItem.total_price_before_tax -
-							req.body.total_price_before_tax;
-
-						/*
-						# as validation passes, so total tax will be reduced
-					*/
-						update_sales.total_tax = checkItem.total_tax - req.body.total_tax;
-						update_sales.tax_type = req.body.tax_type;
-
-						if (
-							req.body.total_price_with_tax != "" &&
-							req.body.total_price_with_tax != null
-						) {
-							update_sales.total_price_with_tax =
-								checkItem.total_price_with_tax - req.body.total_price_with_tax;
-						}
-
-						console.log("I have come here >>>>>>>>>>>>>>>>>>>>>>>>>>>");
-
-						Models.SalesOrderCartDetail.update(update_sales, {
-							where: {
-								id: checkItem.id
-							}
-						}).then(
-							addedItem => {
-								if (addedItem) {
-									console.log("item updated >>>>>>>>>>>>>>>>>>>>>>>>>>>");
-
-									Models.SalesOrderCartPromotion.destroy({
-										where: {
-											sales_order_cart_id: checkItem.id
-										}
-									}).then(
-										delPromotions => {
-											console.log(
-												"old promotions deleted >>>>>>>>>>>>>>>>>>>>>"
-											);
-											// res.end(JSON.stringify({
-											//                   response: 1,
-											//                   message: Messages['en'].SUCCESS_DELETE,
-											//                   result: delPromotions
-											//               }));
-											console.log("now i m here ===================");
-											var promotions_data = [];
-											var created_promotions = {};
-											if (!Array.isArray(req.body.promotions_data)) {
-												promotions_data = [req.body.promotions_data];
-											} else {
-												promotions_data = req.body.promotions_data;
-											}
-											console.log(
-												"all promations array data ===============",
-												promotions_data
-											);
-											if (promotions_data.length > 0) {
-												for (var i = 0; i < promotions_data.length; i++) {
-													if (
-														promotions_data[i].discount_percentage != "" &&
-														promotions_data[i].discount_percentage != null
-													) {
-														promotions_data[i].discount_percentage =
-															promotions_data[i].discount_percentage;
-													} else {
-														promotions_data[i].discount_percentage = 0;
-													}
-
-													if (
-														promotions_data[i].discount_amount != "" &&
-														promotions_data[i].discount_amount != null
-													) {
-														promotions_data[i].discount_amount =
-															promotions_data[i].discount_amount;
-													} else {
-														promotions_data[i].discount_amount = 0;
-													}
-
-													if (
-														promotions_data[i].discount_type != "" &&
-														promotions_data[i].discount_type != null
-													) {
-														promotions_data[i].discount_type =
-															promotions_data[i].discount_type;
-													} else {
-														promotions_data[i].discount_type = "NA";
-													}
-
-													if (
-														promotions_data[i].promotion_bonus_item_id != "" &&
-														promotions_data[i].promotion_bonus_item_id != null
-													) {
-														promotions_data[i].promotion_bonus_item_id =
-															promotions_data[i].promotion_bonus_item_id;
-													} else {
-														promotions_data[i].promotion_bonus_item_id = null;
-													}
-
-													if (
-														promotions_data[i].promotion_bonus_quantity != "" &&
-														promotions_data[i].promotion_bonus_quantity != null
-													) {
-														promotions_data[i].promotion_bonus_quantity =
-															promotions_data[i].promotion_bonus_quantity;
-													} else {
-														promotions_data[i].promotion_bonus_quantity = 0;
-													}
-
-													if (
-														promotions_data[i].promotion_type != "" &&
-														promotions_data[i].promotion_type != null
-													) {
-														promotions_data[i].promotion_type =
-															promotions_data[i].promotion_type;
-													} else {
-														promotions_data[i].promotion_type = "NA";
-													}
-
-													if (
-														promotions_data[i].promotion_id != "" &&
-														promotions_data[i].promotion_id != null
-													) {
-														promotions_data[i].promotion_id =
-															promotions_data[i].promotion_id;
-													} else {
-														promotions_data[i].promotion_id = null;
-													}
-
-													console.log(
-														"update promotion >>>>>>>>>>>>>>>" + checkItem.id
-													);
-													Models.SalesOrderCartPromotion.create({
-														sales_order_cart_id: checkItem.id,
-														discount_type: promotions_data[i].discount_type,
-														promotion_id: promotions_data[i].promotion_id,
-														promotion_type: promotions_data[i].promotion_type,
-														discount_type: promotions_data[i].discount_type,
-														discount_amount: promotions_data[i].discount_amount,
-														discount_percentage:
-															promotions_data[i].discount_percentage,
-														promotion_bonus_item_id:
-															promotions_data[i].promotion_bonus_item_id,
-														promotion_bonus_quantity:
-															promotions_data[i].promotion_bonus_quantity
-													}).then(
-														addedPromotionsData => {
-															created_promotions = addedPromotionsData;
-															console.log("added promotions >>>>>>>>>>>>");
-															res.end(
-																JSON.stringify({
-																	response: 1,
-																	message: Messages["en"].SUCCESS_INSERT
-																	// result: {addedItem,created_promotions}
-																})
-															);
-														},
-														error => {
-															console.log("added promotions err", error);
-															res.end(
-																JSON.stringify({
-																	response: 0,
-																	message: Messages["en"].ERROR_CREATE
-																})
-															);
-														}
-													);
-												}
-											} else {
-												res.end(
-													JSON.stringify({
-														response: 1,
-														message: Messages["en"].SUCCESS_INSERT
-														// result: {addedItem,created_promotions}
-													})
-												);
-											}
-										},
-										err => {
-											console.log("deleting cart item error", err);
-											res.end(
-												JSON.stringify({
-													response: 0,
-													message: Messages["en"].ERROR_FETCH
-												})
-											);
-										}
-									);
-
-									// res.end(JSON.stringify({
-									//                  response: 1,
-									//                  message: Messages['en'].SUCCESS_INSERT,
-									//                  result: addedItem
-									//              }));
-								} else {
-									res.end(
-										JSON.stringify({
-											response: 0,
-											message: Messages["en"].ERROR_CREATE
-										})
-									);
-								}
-							},
-							err => {
-								console.log("cart_items", err);
-								res.end(
-									JSON.stringify({
-										response: 0,
-										message: Messages["en"].ERROR_CREATE
-									})
-								);
-							}
-						);
-					}
-				}
-			},
-			error => {
-				console.log("cart_items err >>>>>>>>>>>>>>>>>>>>>", error);
-				res.end(
-					JSON.stringify({ response: 0, message: Messages["en"].ERROR_CREATE })
-				);
-			}
-		);
-	} else {
-		res.end(
-			JSON.stringify({ response: 2, message: Messages["en"].WRONG_DATA })
-		);
-	}
-};
+      const present_quantity = (parseInt(stock_item_data_quantity) + parseInt(quantity) + parseInt(bonus_qty)).toString();
+      
+      Models.StockItems.update({ quantity: present_quantity },
+        { 
+          where: {
+            user_id: user_id,
+            store_id: store_id,
+            item_id: item_id,
+            measurement_unit_id: measurement_unit_id
+          }
+      })
+      .then( updatedStockItemQuantity => {
+        console.log("updatedStockItemQuantity ==========>", updatedStockItemQuantity[0])
+        console.log("stock item quantity updated ==================")
+        res.end( JSON.stringify({ response: 1, message: Messages["en"].SUCCESS_UPDATE, 
+          result: updatedStockItemQuantity }) )
+      })
+      .catch( error => {
+        console.log("error in stock item quantity update ==================")
+        res.end( JSON.stringify({ response: 0, message: Messages["en"].ERROR_FETCH }) )
+      })
+    })
+    .catch( error =>{
+      console.log("Stock item is not found ==================")
+      res.end( JSON.stringify({ response: 3, message: Messages["en"].NOT_FOUND }) )
+    })
+  }
+  else{
+    res.end( JSON.stringify({ response: 2, message: Messages["en"].WRONG_DATA }) );
+  }
+}
 
 
 /*
