@@ -77,7 +77,14 @@ app.post('/employee/deleteAllSalesCartItems', routes.delete_all_sales_cart_items
 
 */
 app.post('/employee/adjustItemsFromSalesCart', routes.adjust_items_from_sales_cart);
-app.post('/employee/customers-payment-method', routes.customer_payment_method)
+app.post('/employee/customers-payment-method', routes.customer_payment_method) 
+app.post('/employee/customers-take-supervisor-permission', routes.customer_take_supervisor_permission)
+app.post('/employee/customers-cart-supervisor-status', routes.customer_cart_supervisor_status)
+app.post('/employee/supervisor-accept-customers-credit-limit-exceed-request', routes.supervisor_accept_customer_credit_limit_exceed_request)
+app.post('/employee/supervisor-reject-customers-credit-limit-exceed-request', routes.supervisor_reject_customer_credit_limit_exceed_request)
+
+app.get('/employee/customers-credit-limit-exceed-requests-to-supervisor', routes.customer_credit_limit_exceed_requests_to_supervisor)
+
 
 /*Sahil @16-april-19 ends*/
 app.post('/employee/editSalesCartItem', routes.edit_sales_cart_items);

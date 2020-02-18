@@ -5,6 +5,7 @@ var env = "dev";
 const Op = Sequelize.Op;
 
 const schema = require('../utils/schema')
+const { isAllValid } = require('../utils/validation')
 
 var config = require("../config.json")[env];
 var password = config.password ? config.password : null;
@@ -5741,7 +5742,219 @@ exports.start_end_employee_journey = function(req, res) {
 	}
 };
 
-exports.sales_order_request_submit = function(req, res) {
+exports.customer_take_supervisor_permission = async function(req,res){
+  // req.body = {
+  //   "user_id":"12",
+  //   "payment_type":"credit",
+  //   "employee_id":"59",
+  //   "store_id":"32",
+  //   "customer_id":"113",
+  //   "supervisor_id":"58",
+  //   "total_price_without_tax_discount":50,
+  //   "total_tax":8,
+  //   "total_discount":0,
+  //   "battery_life":"100",
+  //   "latitude":"0.0",
+  //   "longitude":"0.0",
+  //   "android_version":"9",
+  //   "app_version":"1",
+  //   "total_price":1500,
+  //   "level":"0",
+  //   "request_type":"invoice",
+  //   "salesmanager_id":"null",
+  //   "sales_order_arr":[{
+  //     "item_id":33,
+  //     "measurement_unit_id":32,
+  //     "quantity":1,
+  //     "total_price":58000,
+  //     "total_tax":8,
+  //     "category_id":36,
+  //     "total_price_with_tax": "58.0",
+  //     "total_price_before_tax":50,
+  //     "tax_type":"percentage",
+  //     "base_price_per_unit":"50",
+  //     "sales_order_promotions_arr":[]
+  //   }]
+  // }
+
+  console.log("Input ============>", req.body)
+  
+	if (isAllValid(req.body.sales_order_arr, req.body.user_id, req.body.employee_id,
+    req.body.customer_id, req.body.supervisor_id, req.body.store_id, req.body.level) ) {
+    
+    /*
+      1. customer may take permission for first time
+      2. took permission many times, it is the updated permission taking 
+      3. all the requests may be in pending or rejected 
+    */
+
+    /* being deleted old requests with status 'pending' or 'rejected'*/
+
+    try{
+      await Models.SalesOrderRequest.destroy({
+        where: {
+          user_id: req.body.user_id,
+          employee_id: req.body.employee_id,
+          customer_id: req.body.customer_id,
+          $or:[ { supervisor_status: 'pending'}, { supervisor_status: 'rejected' } ]
+        }
+      })
+
+      console.log('all the requests before are deleted')
+    }
+    catch(err){
+      console.log('at the time of deleting all the past requests ', err)
+    }
+
+    let sales_order_arr = [];
+    
+    if (!Array.isArray(req.body.sales_order_arr)) sales_order_arr = [req.body.sales_order_arr];
+    else sales_order_arr = req.body.sales_order_arr;
+  
+    let create_sales = {};
+  
+    create_sales.user_id = req.body.user_id;
+    create_sales.request_level = req.body.level;
+    create_sales.employee_id = req.body.employee_id;
+    create_sales.customer_id = req.body.customer_id;
+    create_sales.store_id = req.body.store_id;
+    create_sales.supervisor_id = req.body.supervisor_id;
+    create_sales.no_of_items = sales_order_arr.length;
+
+    if(req.body.level > 1 && !isAllValid(req.body.salesmanager_id)) return res.end( JSON.stringify({ response: 2, message: Messages["en"].WRONG_DATA }));
+    else if (req.body.level > 1) {
+      create_sales.salesmanager_id = req.body.salesmanager_id;
+      create_sales.salesmanager_status = "pending";
+    }
+  
+    create_sales.supervisor_status = "pending"
+    create_sales.total_price_without_tax_discount = req.body.total_price_without_tax_discount;
+    create_sales.total_tax = req.body.total_tax;
+    create_sales.total_discount = req.body.total_discount;
+    create_sales.total_price = req.body.total_price;
+    create_sales.request_type =
+      req.body.request_type == "invoice" ? "invoice" : req.body.request_type == "return_invoice" ? "return_invoice" : "sales";
+  
+    /* made the updated requests */
+    try{
+      const salesOrderRequest = await Models.SalesOrderRequest.create(create_sales)
+      console.log("Created successfully ============>", salesOrderRequest) 
+      res.end( JSON.stringify({ response: 1, message: Messages["en"].SUCCESS_INSERT, cart_id: salesOrderRequest.id, cart_total_price: salesOrderRequest.total_price }))
+    }
+    catch(err){
+      return res.end( JSON.stringify({ response: 0, message: Messages["en"].ERROR_CREATE }) );
+    }
+  }
+  else res.end( JSON.stringify({ response: 2, message: Messages["en"].WRONG_DATA }))
+}
+
+exports.customer_cart_supervisor_status = async function(req,res){
+  // req.body = {
+  //   "cart_id": "16",
+  //   "user_id":"12",
+  //   "payment_type":"credit",
+  //   "employee_id":"59",
+  //   "store_id":"32",
+  //   "customer_id":"113",
+  //   "supervisor_id":"58",
+  //   "total_price_without_tax_discount":50,
+  //   "total_tax":8,
+  //   "total_discount":0,
+  //   "battery_life":"100",
+  //   "latitude":"0.0",
+  //   "longitude":"0.0",
+  //   "android_version":"9",
+  //   "app_version":"1",
+  //   "total_price":1500,
+  //   "level":"0",
+  //   "request_type":"invoice",
+  //   "salesmanager_id":"null",
+  //   "sales_order_arr":[{
+  //     "item_id":33,
+  //     "measurement_unit_id":32,
+  //     "quantity":1,
+  //     "total_price":58000,
+  //     "total_tax":8,
+  //     "category_id":36,
+  //     "total_price_with_tax": "58.0",
+  //     "total_price_before_tax":50,
+  //     "tax_type":"percentage",
+  //     "base_price_per_unit":"50",
+  //     "sales_order_promotions_arr":[]
+  //   }]
+  // }
+
+  console.log("Input ============>", req.body)
+  
+	if (isAllValid(req.body.sales_order_arr, req.body.user_id, req.body.employee_id,
+    req.body.customer_id, req.body.supervisor_id, req.body.store_id, req.body.level, req.body.cart_id) ) {
+  
+    try{
+      const data = await Models.SalesOrderRequest.findOne({
+        where:{
+          id: req.body.cart_id
+        }
+      })
+      res.end( JSON.stringify({ response: 1, message: Messages["en"].SUCCESS_FETCH, result: data.supervisor_status }))
+    }
+    catch(err){
+      res.end( JSON.stringify({ response:0, message: Messages["en"].ERROR_FETCH }) )
+    }
+  }
+  else res.end( JSON.stringify({ response: 2, message: Messages["en"].WRONG_DATA }) )
+}
+
+exports.customer_credit_limit_exceed_requests_to_supervisor = async function(req,res){
+  try{
+    const data = await Models.SalesOrderRequest.findAll({
+      supervisor_status: 'pending'
+    })
+    res.end( JSON.stringify({ response:1, message: Messages['en'].SUCCESS_FETCH, result: data }))
+  }
+  catch(err){
+    res.end( JSON.stringify({ response:0, message: Messages["en"].ERROR_FETCH }))
+  }
+}
+
+exports.supervisor_accept_customer_credit_limit_exceed_request = async function(req,res){
+  // req.body = {
+  //   "id": 14, // cart id
+  // }
+
+  if(isAllValid(req.body.id)){
+    try{
+      const data = await Models.SalesOrderRequest.update({ supervisor_status: 'accepted'}, { 
+        where: { id: req.body.id } 
+      })
+      res.end(JSON.stringify({ response: 1, message: 'You accepted the request', result: data }))
+    }
+    catch(err){
+      console.log(err)
+      res.end(JSON.stringify({ response:0, message: Messages['en'].ERROR_CREATE }))
+    }
+  }
+}
+
+exports.supervisor_reject_customer_credit_limit_exceed_request = async function(req,res){
+  // req.body = {
+  //   "id": 14, // cart id
+  // }
+
+  if(isAllValid(req.body.id)){
+    try{
+      const data = await Models.SalesOrderRequest.update({ supervisor_status: 'rejected'}, { 
+        where: { id: req.body.id } 
+      })
+      res.end(JSON.stringify({ response: 1, message: 'You rejected the request', result: data }))
+    }
+    catch(err){
+      console.log(err)
+      res.end(JSON.stringify({ response:0, message: Messages['en'].ERROR_CREATE }))
+    }
+  }
+}
+
+exports.sales_order_request_submit = async function(req, res) {
 	var sale_req_detail;
 	var cart_data;
 	var promotions_data;
@@ -5822,7 +6035,8 @@ exports.sales_order_request_submit = function(req, res) {
 	// };
 
 	// req.body = {
-	// 	"user_id": "7",
+  // 	"user_id": "7",
+  //  "cart_id": "16" // old_request_id 
 	// 	"employee_id": "40",
 	// 	"store_id": "29",
 	// 	"customer_id": "88",
@@ -5883,13 +6097,60 @@ exports.sales_order_request_submit = function(req, res) {
 	// };
 	console.log(req.body);
 
-	if (
-		req.body.sales_order_arr && req.body.user_id != "" && req.body.user_id != null &&
-		req.body.employee_id != "" && req.body.employee_id != null && req.body.customer_id != "" &&
-		req.body.customer_id != null && req.body.supervisor_id != "" && req.body.supervisor_id != null &&
-		req.body.store_id != "" && req.body.store_id != null && req.body.level != "" &&
-		req.body.level != null ) {
-  
+	if (isAllValid(req.body.sales_order_arr, req.body.user_id, req.body.employee_id,
+    req.body.customer_id, req.body.supervisor_id, req.body.store_id, req.body.level) ) {
+    
+    /*
+       # at submission, if he requested to supervisor before, then he has cart id
+       # if there are cart id, there may be pending, accepted or rejected
+       # if pending, then present cart_total_price is same, don't let him do for successful submission
+       # if rejected, then present cart_total_price is same, don't let him do for successful submission
+       # if accepted, then present cart_total_price is same, let him do for successfull submission
+    */
+    if( isAllValid(req.body.cart_id) ){ // if not valid, that means, there are no cart id
+      try{
+        const oldCart = await Models.SalesOrderRequest.findOne({
+          where:{
+            id: req.body.cart_id
+          }
+        })
+        if( (oldCart.supervisor_status == 'rejected' || oldCart.supervisor_status == 'pending') &&
+        req.body.total_price == req.body.cart_total_price){
+
+          return res.end( JSON.stringify({ response: 0, message: `You can not order. Your request is, ${oldCart.supervisor_status}` }) )
+        }
+      }
+      catch(err){
+        console.log(err)
+        return res.end( JSON.stringify({ response:0, message: "This cart id is not found" }) )
+      }
+    }
+
+    /*
+      # lets assume the cart id is valid, we see, it's not rejected or pending and found, 
+      so the old cart is accepted by supervisor so we should not check the exceed limit
+
+      # there is no cart_id, means this is the first submit of the cart
+    */
+    if( !isAllValid( req.body.cart_id) ){
+      try{
+        const customer = await Models.Customers.findOne({
+          where: {
+            id: req.body.customer_id
+          }
+        })
+        console.log(customer)
+        if(customer == null) return res.end( JSON.stringify({ response: 3, message: Messages["en"].NOT_FOUND }) )
+        let buying_limit = customer.credit_limit
+        if( !isAllValid(buying_limit) ) buying_limit = 0
+        if(req.body.total_price > buying_limit) return res.end( JSON.stringify({ response: 0, message: `Exceeded credit limit. Limit is ${buying_limit}` }))
+      }
+      catch(err){
+        return res.end( JSON.stringify({ response: 0, message: Messages["en"].ERROR_FETCH }) );
+      }
+    }
+    /* ---------------- if total price is not more than customer's budget limit ----------------*/
+
     let sales_order_arr = [];
     
 		if (!Array.isArray(req.body.sales_order_arr)) sales_order_arr = [req.body.sales_order_arr];
@@ -5913,6 +6174,7 @@ exports.sales_order_request_submit = function(req, res) {
 			create_sales.salesmanager_status = "pending";
 		}
 
+    create_sales.supervisor_status = "accepted"
 		create_sales.total_price_without_tax_discount =
 			req.body.total_price_without_tax_discount;
 		create_sales.total_tax = req.body.total_tax;
@@ -5923,7 +6185,49 @@ exports.sales_order_request_submit = function(req, res) {
 				? "invoice"
 				: req.body.request_type == "return_invoice"
 				? "return_invoice"
-				: "sales";
+        : "sales";
+        
+    /*
+      1. customer may have old pending or rejected requests
+      which should be deleted, as it is the the successful submission of the order 
+    */
+
+    /* being deleted old requests with status 'pending' or 'rejected' */
+    try{
+      await Models.SalesOrderRequest.destroy({
+        where: {
+          user_id: req.body.user_id,
+          employee_id: req.body.employee_id,
+          customer_id: req.body.customer_id,
+          $or:[ { supervisor_status: 'pending'}, { supervisor_status: 'rejected' } ]
+        }
+      })
+
+      console.log('all the requests before are deleted')
+    }
+    catch(err){
+      console.log('Error at the time of deleting all the past requests ', err)
+    }
+
+
+    /*
+      # may be there is old cart_id and status is accepted. then I should delete that sales_order_request
+      # and made a successfull submission 
+    */
+
+    try{
+      await Models.SalesOrderRequest.destroy({
+        where:{
+          id: req.body.cart_id
+        }
+      })
+      console.log('Requested cart with supervisor status "accepted" is deleted')
+    }
+    catch(err){
+      console.log(err)
+    }
+
+    // now everything is handled, go for successfull cart submission
 
     Models.SalesOrderRequest.create(create_sales)
     .then( async salesOrderRequest => {
