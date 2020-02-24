@@ -5743,39 +5743,39 @@ exports.start_end_employee_journey = function(req, res) {
 };
 
 exports.customer_take_supervisor_permission = async function(req,res){
-  // req.body = {
-  //   "user_id":"12",
-  //   "payment_type":"credit",
-  //   "employee_id":"59",
-  //   "store_id":"32",
-  //   "customer_id":"113",
-  //   "supervisor_id":"58",
-  //   "total_price_without_tax_discount":50,
-  //   "total_tax":8,
-  //   "total_discount":0,
-  //   "battery_life":"100",
-  //   "latitude":"0.0",
-  //   "longitude":"0.0",
-  //   "android_version":"9",
-  //   "app_version":"1",
-  //   "total_price":1500,
-  //   "level":"0",
-  //   "request_type":"invoice",
-  //   "salesmanager_id":"null",
-  //   "sales_order_arr":[{
-  //     "item_id":33,
-  //     "measurement_unit_id":32,
-  //     "quantity":1,
-  //     "total_price":58000,
-  //     "total_tax":8,
-  //     "category_id":36,
-  //     "total_price_with_tax": "58.0",
-  //     "total_price_before_tax":50,
-  //     "tax_type":"percentage",
-  //     "base_price_per_unit":"50",
-  //     "sales_order_promotions_arr":[]
-  //   }]
-  // }
+//   req.body = {
+//     "user_id":"12",
+//     "payment_type":"credit",
+//     "employee_id":"59",
+//     "store_id":"32",
+//     "customer_id":"113",
+//     "supervisor_id":"58",
+//     "total_price_without_tax_discount":50,
+//     "total_tax":8,
+//     "total_discount":0,
+//     "battery_life":"100",
+//     "latitude":"0.0",
+//     "longitude":"0.0",
+//     "android_version":"9",
+//     "app_version":"1",
+//     "total_price":1500,
+//     "level":"0",
+//     "request_type":"invoice",
+//     "salesmanager_id":"null",
+//     "sales_order_arr":[{
+//       "item_id":33,
+//       "measurement_unit_id":32,
+//       "quantity":1,
+//       "total_price":58000,
+//       "total_tax":8,
+//       "category_id":36,
+//       "total_price_with_tax": "58.0",
+//       "total_price_before_tax":50,
+//       "tax_type":"percentage",
+//       "base_price_per_unit":"50",
+//       "sales_order_promotions_arr":[]
+//     }]
+//   }
 
   console.log("Input ============>", req.body)
   
@@ -5905,15 +5905,25 @@ exports.customer_cart_supervisor_status = async function(req,res){
 }
 
 exports.customer_credit_limit_exceed_requests_to_supervisor = async function(req,res){
-  try{
-    const data = await Models.SalesOrderRequest.findAll({
-      supervisor_status: 'pending'
-    })
-    res.end( JSON.stringify({ response:1, message: Messages['en'].SUCCESS_FETCH, result: data }))
+//   req.body = {
+//     "user_id":"12",
+//     "supervisor_id":"58" 
+//   }
+  const { user_id, supervisor_id} = req.body
+  if(isAllValid(user_id, supervisor_id) ){
+    try{
+      const data = await Models.SalesOrderRequest.findAll({
+        supervisor_status: 'pending',
+        supervisor_id: supervisor_id
+      })
+      res.end( JSON.stringify({ response:1, message: Messages['en'].SUCCESS_FETCH, result: data }))
+    }
+    catch(err){
+      res.end( JSON.stringify({ response:0, message: Messages["en"].ERROR_FETCH }))
+    }
   }
-  catch(err){
-    res.end( JSON.stringify({ response:0, message: Messages["en"].ERROR_FETCH }))
-  }
+  else res.end( JSON.stringify({ response:0, message: Messages['en'].WRONG_DATA }))
+  
 }
 
 exports.supervisor_accept_customer_credit_limit_exceed_request = async function(req,res){
@@ -5952,6 +5962,49 @@ exports.supervisor_reject_customer_credit_limit_exceed_request = async function(
       res.end(JSON.stringify({ response:0, message: Messages['en'].ERROR_CREATE }))
     }
   }
+}
+
+exports.customer_set_currency = async function(req,res){
+    // req.body = {
+    //     "user_id" : 1,
+    //     "currency": "JOD",
+    //     "currency_short": "Jordanian Dinner"
+    // }
+    const { user_id, currency, currency_short  } = req.body
+    if(isAllValid(user_id, currency, currency_short)){
+        try{
+            const user = await Models.Users.update({ currency, currency_short }, 
+            {  
+                where: { 
+                    id: user_id 
+                } 
+            })
+
+            if(user == null) return res.end( JSON.stringify({ response:0, message: Messages['en'].NOT_FOUND }))
+            return res.end( JSON.stringify({ response:1, message: Messages['en'].SUCCESS_UPDATE, result: user }))
+        }
+        catch(err){
+            res.end( JSON.stringify({ response:0, message: Messages['en'].ERROR_CREATE }))
+        }
+    }
+    else{
+        res.end( JSON.stringify({ response:0, message: Messages['en'].WRONG_DATA }))
+    }
+}
+
+exports.customer_available_get_currencies = async function(req,res){
+    try{
+        const data = await Models.Countries.findAll({
+            where:{
+                $not: { currency: null },
+                $not: { currency_short: null }
+            }
+        })
+        res.end( JSON.stringify({ response: 1, message: Messages['en'].SUCCESS_FETCH, result: data }) )
+    }
+    catch(err){
+        res.end( JSON.stringify({ response:0, message: Messages["en"].ERROR_FETCH }))
+    }
 }
 
 exports.sales_order_request_submit = async function(req, res) {
@@ -6143,7 +6196,7 @@ exports.sales_order_request_submit = async function(req, res) {
         if(customer == null) return res.end( JSON.stringify({ response: 3, message: Messages["en"].NOT_FOUND }) )
         let buying_limit = customer.credit_limit
         if( !isAllValid(buying_limit) ) buying_limit = 0
-        if(req.body.total_price > buying_limit) return res.end( JSON.stringify({ response: 0, message: `Exceeded credit limit. Limit is ${buying_limit}` }))
+        if(req.body.total_price > buying_limit) return res.end( JSON.stringify({ response: 0, message: `Exceeded credit limit. Limit is ${buying_limit}`, result: true }))
       }
       catch(err){
         return res.end( JSON.stringify({ response: 0, message: Messages["en"].ERROR_FETCH }) );
