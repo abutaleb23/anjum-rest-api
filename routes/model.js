@@ -587,7 +587,8 @@ exports.SalesOrderCartDetail = sequelize.define("sales_order_cart_details", {
 	total_tax: { type: Sequelize.DOUBLE },
 	tax_type: { type: Sequelize.ENUM("value", "percentage", "NA") },
 	base_price_per_unit: { type: Sequelize.DOUBLE },
-	total_price_with_tax: { type: Sequelize.DOUBLE },
+    total_price_with_tax: { type: Sequelize.DOUBLE },
+    cart_type: { type: Sequelize.STRING  },
 	created_at: { type: Sequelize.DATE },
 	updated_at: { type: Sequelize.DATE }
 });

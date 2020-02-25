@@ -4549,62 +4549,41 @@ exports.get_unload_request_items_list = function(req, res) {
 
 exports.add_items_to_sales_cart = function(req, res) {
 	// req.body = {
-	// 				"user_id": "7",
-	// 				"employee_id": "13",
-	// 				"customer_id": "88",
-	// 				"item_id": "1",
-	// 				"quantity": "30",
-	// 				"unit_id": "23",
-	// 				"total_price": 1575,
-	// 				"total_price_before_tax": 1500,
-	// 				"total_tax": 75,
-	// 				"base_price_per_unit": 50,
-	// 				"tax_type": "percentage",
-	// 				"total_price_with_tax": 1575,
-	// 				"promotions_data": [{
-	// 				"promotion_id": "76",
-	// 				"promotion_type": "range",
-	// 				"promotion_bonus_item_id": "4",
-	// 				"promotion_bonus_quantity": "40"
-	// 				}, {
-	// 				"promotion_id": "62",
-	// 				"promotion_type": "range",
-	// 				"promotion_bonus_item_id": "4",
-	// 				"promotion_bonus_quantity": "30"
-	// 				}, {
-	// 				"promotion_id": "34",
-	// 				"promotion_type": "package",
-	// 				"discount_type": "value",
-	// 				"discount_amount": "20",
-	// 				"discount_percentage": ""
-	// 				}]
-	// 				};
+    //     "user_id": "7",
+    //     "employee_id": "13",
+    //     "customer_id": "88",
+    //     "item_id": "1",
+    //     "quantity": "30",
+    //     "unit_id": "23",
+    //     "total_price": 1575,
+    //     "total_price_before_tax": 1500,
+    //     "total_tax": 75,
+    //     "base_price_per_unit": 50,
+    //     "tax_type": "percentage",
+    //     "total_price_with_tax": 1575,
+    //     "cart_type": "invoice" or "return_invoice" or "order"
+    //     "promotions_data": [{
+    //     "promotion_id": "76",
+    //     "promotion_type": "range",
+    //     "promotion_bonus_item_id": "4",
+    //     "promotion_bonus_quantity": "40"
+    //     }, {
+    //     "promotion_id": "62",
+    //     "promotion_type": "range",
+    //     "promotion_bonus_item_id": "4",
+    //     "promotion_bonus_quantity": "30"
+    //     }, {
+    //     "promotion_id": "34",
+    //     "promotion_type": "package",
+    //     "discount_type": "value",
+    //     "discount_amount": "20",
+    //     "discount_percentage": ""
+    //     }]
+    // };
 
 	console.log("add items to sales cart data =====================", req.body);
-	if (
-		req.body.user_id != null &&
-		req.body.user_id != "" &&
-		req.body.item_id != null &&
-		req.body.item_id != "" &&
-		req.body.employee_id != null &&
-		req.body.employee_id != "" &&
-		req.body.customer_id != null &&
-		req.body.customer_id != "" &&
-		req.body.unit_id != null &&
-		req.body.unit_id != "" &&
-		req.body.quantity != null &&
-		req.body.quantity != "" &&
-		req.body.total_price != null &&
-		req.body.total_price != "" &&
-		req.body.total_price_before_tax != null &&
-		req.body.total_price_before_tax != "" &&
-		req.body.total_tax != null &&
-		req.body.total_tax != "" &&
-		req.body.tax_type != null &&
-		req.body.tax_type != "" &&
-		req.body.base_price_per_unit != null &&
-		req.body.base_price_per_unit != ""
-	) {
+    if ( isAllValid(req.body.user_id, req.body.item_id, req.body.employee_id, req.body.customer_id, req.body.unit_id, req.body.quantity,
+        req.body.total_price, req.body.total_price_before_tax, req.body.tax_type, req.body.base_price_per_unit, req.body.cart_type ) ){
 		console.log(
 			"input data >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>",
 			req.body
@@ -4614,10 +4593,10 @@ exports.add_items_to_sales_cart = function(req, res) {
 				user_id: req.body.user_id,
 				employee_id: req.body.employee_id,
 				customer_id: req.body.customer_id,
-				item_id: req.body.item_id
+                item_id: req.body.item_id,
+                cart_type: req.body.cart_type
 			}
-		}).then(
-			checkItem => {
+		}).then( checkItem => {
 				console.log("checkItem >>>>>>>>>>>>>>>>>>>>");
 				if (checkItem == null) {
 					console.log("checkItem if >>>>>>>>>>>>>>>>>>>>>>>>>");
@@ -4647,17 +4626,22 @@ exports.add_items_to_sales_cart = function(req, res) {
 					create_sales.total_price_before_tax = req.body.total_price_before_tax;
 					create_sales.total_tax = req.body.total_tax;
 					create_sales.tax_type = req.body.tax_type;
-					create_sales.base_price_per_unit = req.body.base_price_per_unit;
+                    create_sales.base_price_per_unit = req.body.base_price_per_unit;
+                    create_sales.cart_type = req.body.cart_type
 					console.log("befor add >>>>>>>>>>>>>>>>>>>>");
-					Models.SalesOrderCartDetail.create(create_sales).then(
-						addedItem => {
+                    Models.SalesOrderCartDetail.create(create_sales)
+                        .then( addedItem => {
 							if (addedItem) {
 								console.log(" added item >>>>>>>>>>>>>>>>" + addedItem.id);
-								console.log("if added item >>>>>>>>>>>>>>>>");
+                                if(req.body.cart_type=='return_invoice') return res.end( JSON.stringify({ response: 1, message: Messages['en'].SUCCESS_INSERT }) )
+
+                                // items already added in the cart =>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+                                console.log("if added item >>>>>>>>>>>>>>>>");
 								console.log(
 									"promotions data array >>>>>>>>>>>>>>>>",
 									req.body.promotions_data
-								);
+                                );
+                                
 								var promotions_data = [];
 								if (!Array.isArray(req.body.promotions_data)) {
 									promotions_data = [req.body.promotions_data];
@@ -4844,8 +4828,11 @@ exports.add_items_to_sales_cart = function(req, res) {
 						}
 					}).then(
 						addedItem => {
+                            
 							if (addedItem) {
-								console.log("item updated >>>>>>>>>>>>>>>>>>>>>>>>>>>");
+                                console.log("item updated >>>>>>>>>>>>>>>>>>>>>>>>>>>");
+                                
+                                if(req.body.cart_type=='return_invoice') return res.end( JSON.stringify({ response: 1, message: Messages['en'].SUCCESS_INSERT }) )
 
 								Models.SalesOrderCartPromotion.destroy({
 									where: {
@@ -5040,6 +5027,7 @@ exports.add_items_to_sales_cart = function(req, res) {
 			}
 		);
 	} else {
+        console.log('debug ============================>')
 		res.end(
 			JSON.stringify({
 				response: 2,
@@ -5055,7 +5043,7 @@ exports.add_items_to_sales_cart = function(req, res) {
 	1. check message response is correct
 */
 
-exports.adjust_items_from_sales_cart = function(req, res) {
+exports.adjust_items_from_sales_cart = async function(req, res) {
 
   // req.body = {
   //   "user_id": "7", 
@@ -5067,56 +5055,182 @@ exports.adjust_items_from_sales_cart = function(req, res) {
   //   "quantity": "30", 
   //   "bonus_qty": "2"
   // }
+
+  // req.body = {
+	// 	"user_id": "7",
+	// 	"employee_id": "13",
+	// 	"store_id": "25",
+	// 	"customer_id": "88",
+	// 	"supervisor_id": "19",
+	// 	"total_price_without_tax_discount": 2400,
+	// 	"total_tax": 60,
+	// 	"total_discount": 1200,
+	// 	"total_price": 1260,
+	// 	"request_type":"invoice"
+	// 	"level": "2",
+	// 	"salesmanager_id": "16",
+	// 	"sales_order_arr": [{
+	// 	"item_id": 4,
+	// 	"measurement_unit_id": 23,
+	// 	"quantity": 30,
+	// 	"total_price": "315.0",
+	// 	"total_tax": "15.0",
+	// 	"total_price_with_tax": "315.0",
+	// 	"total_price_before_tax": 900,
+	// 	"tax_type": "percentage",
+	// 	"base_price_per_unit": "30",
+	// 	"sales_order_promotions_arr": [{
+	// 	"promotion_id": "34",
+	// 	"promotion_type": "package",
+	// 	"discount_type": "value",
+	// 	"discount_amount": "20",
+	// 	"discount_percentage": ""
+	// 	}]
+	// 	}, {
+	// 	"item_id": 1,
+	// 	"measurement_unit_id": 23,
+	// 	"quantity": 30,
+	// 	"total_price": "945.0",
+	// 	"total_tax": "45.0",
+	// 	"total_price_with_tax": "945.0",
+	// 	"total_price_before_tax": 1500,
+	// 	"tax_type": "percentage",
+	// 	"base_price_per_unit": "50",
+	// 	"sales_order_promotions_arr": [{
+	// 	"promotion_id": "62",
+	// 	"promotion_type": "range",
+	// 	"promotion_bonus_item_id": "70",
+	// 	"promotion_bonus_quantity": "20",
+	// 	"measurement_unit_id": '23',
+	// 	}, {
+	// 	"promotion_id": "62",
+	// 	"promotion_type": "range",
+	// 	"promotion_bonus_item_id": "68",
+	// 	"promotion_bonus_quantity": "30",
+	// 	"measurement_unit_id": '23',
+	// 	}, {
+	// 	"promotion_id": "62",
+	// 	"promotion_type": "range",
+	// 	"promotion_bonus_item_id": "71",
+	// 	"promotion_bonus_quantity": "30",
+	// 	"measurement_unit_id": '23',
+	// 	}, {
+	// 	"promotion_id": "76",
+	// 	"promotion_type": "range",
+	// 	"promotion_bonus_item_id": "59",
+	// 	"promotion_bonus_quantity": "40",
+	// 	"measurement_unit_id": '23',
+	// 	}, {
+	// 	"promotion_id": "34",
+	// 	"promotion_type": "package",
+	// 	"discount_type": "value",
+	// 	"discount_amount": "20",
+	// 	"discount_percentage": "",
+	// 	"measurement_unit_id": '23',
+	// 	}]
+	// }]
+	// };
+
+	// req.body = {
+  // 	"user_id": "7",
+	// 	"employee_id": "40",
+	// 	"store_id": "29",
+	// 	"customer_id": "88",
+	// 	"supervisor_id": "19",
+	// 	"total_price_without_tax_discount": 300,
+	// 	"total_tax": 0,
+	// 	"total_discount": 0,
+	// 	"battery_life": "57",
+	// 	"latitude": "30.95489073",
+	// 	"longitude": "75.84848024",
+	// 	"android_version": "6.0.1",
+	// 	"total_price": 0,
+	// 	"level": "2",
+	// 	"request_type": "return_invoice",
+	// 	"salesmanager_id": "16",
+	// 	"sales_order_arr": [{
+	// 		"item_id": 4,
+	// 		"measurement_unit_id": 23,
+	// 		"quantity": 10,
+	// 		"total_price": "0",
+	// 		"total_tax": "0",
+	// 		"total_price_with_tax": "0",
+	// 		"total_price_before_tax": 300,
+	// 		"tax_type": "percentage",
+	// 		"base_price_per_unit": "30"
+	// 	}]
+	// };
+  
 	console.log( "adjust items from sales cart data =====================", req.body);
-  let { user_id, employee_id, customer_id, store_id, item_id, measurement_unit_id, quantity, bonus_qty} = req.body
-	if ( user_id != null && user_id != "" && item_id != null && item_id != "" &&
-		employee_id != null && employee_id != "" && customer_id != null && customer_id != "" &&
-    quantity != null && quantity != "" ) {
+  let { user_id, employee_id, customer_id, store_id, } = req.body
+	if ( isAllValid(user_id, employee_id, customer_id, store_id ) ) {
 
-    // Finding the product. I will just increase the stock amount 
-    Models.StockItems.findOne({
-      where: {
-        user_id: user_id,
-        store_id: store_id,
-        item_id: item_id,
-        measurement_unit_id: measurement_unit_id
+    let sales_order_arr = [];
+
+		if (!Array.isArray(req.body.sales_order_arr)) sales_order_arr = [req.body.sales_order_arr];
+    else sales_order_arr = req.body.sales_order_arr;
+
+    
+
+    for ( let i = 0; i < sales_order_arr.length; i++) {
+
+      if( isAllValid(sales_order_arr[i].item_id, sales_order_arr[i].measurement_unit_id) ) {
+        console.log('Sales Order Arr [i] ==========>', sales_order_arr[i])
+        
+        // Finding the product. I will just increase the stock amount 
+        console.log("debug: ", user_id, store_id, sales_order_arr[i].item_id, sales_order_arr[i].measurement_unit_id)
+
+        try{
+          const stockItemData = await Models.StockItems.findOne({
+            where: {
+              user_id: user_id,
+              store_id: store_id,
+              item_id: sales_order_arr[i].item_id,
+              measurement_unit_id: sales_order_arr[i].measurement_unit_id
+            }
+          })
+
+          console.log('Stock item data ===========> ', stockItemData)
+
+          let stock_item_data_quantity = stockItemData.quantity
+          if( stockItemData.quantity == null) stock_item_data_quantity = 0;
+
+          const present_quantity = ( parseInt(stock_item_data_quantity) + parseInt(sales_order_arr[i].quantity) ).toString();
+          
+          const updatedStockItemQuantity = await Models.StockItems.update({ quantity: present_quantity },
+            { 
+              where: {
+                user_id: user_id,
+                store_id: store_id,
+                item_id: sales_order_arr[i].item_id,
+                measurement_unit_id: sales_order_arr[i].measurement_unit_id
+              }
+          })
+
+          console.log('Updated Stock Item Quantity =============> ', updatedStockItemQuantity)
+
+          Models.SalesOrderCartDetail.destroy({
+            where: {
+              user_id: user_id,
+              employee_id: employee_id,
+              customer_id: customer_id,
+              item_id: sales_order_arr[i].item_id
+            }
+          }).then( destCart =>{
+            console.log('Destroied the cart from return invoice')
+            if(i == sales_order_arr.length-1) return res.end(JSON.stringify({ response:1, message: Messages['en'].SUCCESS_INSERT }))
+          }).catch(err=>{
+            console.log(err)
+          })
+        }
+        catch(err){
+          res.end( JSON.stringify({ response: 3, message: 'Error Occured' }) )
+        }
       }
-    })
-    .then( stockItemData => {
-      let stock_item_data_quantity = stockItemData.quantity
-      if( stockItemData.quantity == null) stock_item_data_quantity = 0;
-      if( bonus_qty == null || bonus_qty == "" ) bonus_qty = 0
-
-      const present_quantity = (parseInt(stock_item_data_quantity) + parseInt(quantity) + parseInt(bonus_qty)).toString();
-      
-      Models.StockItems.update({ quantity: present_quantity },
-        { 
-          where: {
-            user_id: user_id,
-            store_id: store_id,
-            item_id: item_id,
-            measurement_unit_id: measurement_unit_id
-          }
-      })
-      .then( updatedStockItemQuantity => {
-        console.log("updatedStockItemQuantity ==========>", updatedStockItemQuantity[0])
-        console.log("stock item quantity updated ==================")
-        res.end( JSON.stringify({ response: 1, message: Messages["en"].SUCCESS_UPDATE, 
-          result: updatedStockItemQuantity }) )
-      })
-      .catch( error => {
-        console.log("error in stock item quantity update ==================")
-        res.end( JSON.stringify({ response: 0, message: Messages["en"].ERROR_FETCH }) )
-      })
-    })
-    .catch( error =>{
-      console.log("Stock item is not found ==================")
-      res.end( JSON.stringify({ response: 3, message: Messages["en"].NOT_FOUND }) )
-    })
+      else return res.end(JSON.stringify({ response: 0, message: Messages['en'].WRONG_DATA }))
+    }
   }
-  else{
-    res.end( JSON.stringify({ response: 2, message: Messages["en"].WRONG_DATA }) );
-  }
+  else res.end( JSON.stringify({ response: 2, message: Messages["en"].WRONG_DATA }) );
 }
 
 
@@ -5149,24 +5263,16 @@ exports.customer_payment_method = function(req,res){
 }
 
 exports.sales_cart_items_list = function(req, res) {
-	// req.body = {"user_id":"7","employee_id":"44","customer_id":"88","price_list_id":"2"};
+	// req.body = {"user_id":"7", "employee_id":"44", "customer_id":"88", "price_list_id":"2", "cart_type": "return_invoice"};
 	console.log("sales cart item list req body >>>>>>>>>>>>>>>>>>..", req.body);
-	if (
-		req.body.user_id != "" &&
-		req.body.user_id != null &&
-		req.body.employee_id != "" &&
-		req.body.employee_id != null &&
-		req.body.customer_id != "" &&
-		req.body.customer_id != null &&
-		req.body.price_list_id != "" &&
-		req.body.price_list_id != null
-	) {
+	if ( isAllValid(req.body.user_id, req.body.employee_id, req.body.customer_id, req.body.price_list_id, req.body.cart_type) ){
 		console.log("if ------------------------!!!");
 		Models.SalesOrderCartDetail.findAll({
 			where: {
 				user_id: req.body.user_id,
 				employee_id: req.body.employee_id,
-				customer_id: req.body.customer_id
+        customer_id: req.body.customer_id,
+        cart_type: req.body.cart_type
 			},
 			include: [
 				{
@@ -6296,7 +6402,7 @@ exports.sales_order_request_submit = async function(req, res) {
 							? "return_invoice_order"
 							: "sales_order";
 
-					for (var i = 0; i < sales_order_arr.length; i++) {
+          for (var i = 0; i < sales_order_arr.length; i++) {
 						console.log("q step 2");
 						if (
 							sales_order_arr[i].item_id &&
@@ -6401,15 +6507,10 @@ exports.sales_order_request_submit = async function(req, res) {
 															);
 														}
 													);
-													console.log(
-														"stock item quantity updated ==================",
-														sales_order_arr[i].quantity
-													);
+													console.log("stock item quantity updated ==================", sales_order_arr[i].quantity);
 												},
-												error => {
-													console.log(
-														"error in stock item quantity update =================="
-													);
+												error => { 
+                          console.log( "error in stock item quantity update ==================");
 												}
 											);
 										} else {
