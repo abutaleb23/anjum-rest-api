@@ -226,7 +226,8 @@ exports.EmployeePermissions = sequelize.define("employee_permissions", {
 	add_bonus: { type: Sequelize.ENUM("yes", "no") },
 	add_item_discount: { type: Sequelize.ENUM("yes", "no") },
 	add_voucher_discount: { type: Sequelize.ENUM("yes", "no") },
-	add_customer: { type: Sequelize.ENUM("yes", "no") },
+    add_customer: { type: Sequelize.ENUM("yes", "no") },
+    display_product_quantity: {type: Sequelize.ENUM('yes', 'no') },
 	created_at: { type: Sequelize.DATE },
 	updated_at: { type: Sequelize.DATE }
 });

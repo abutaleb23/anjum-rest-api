@@ -5848,6 +5848,28 @@ exports.start_end_employee_journey = function(req, res) {
 	}
 };
 
+exports.customer_stock_quantity_permission_status = async function(req,res){
+    // {
+    //     "user_id": 8,
+    //     "employee_id": 10
+    // }
+    console.log(req.body)
+    if(! isAllValid(req.body.user_id, req.body.employee_id) ) return res.end(JSON.stringify({ response: 0, message: Messages['en'].WRONG_DATA }))
+
+    try{
+        const result = await Models.EmployeePermissions.findOne({
+            where:{
+                user_id: req.body.user_id,
+                employee_id: req.body.employee_id
+            }
+        })
+        return res.end(JSON.stringify({ response:1, message: Messages['en'].SUCCESS_FETCH, result: result.display_product_quantity }))
+    }
+    catch(e){
+        return res.end(JSON.stringify({ response: 0, message: Messages['en'].NOT_FOUND }))
+    }
+}
+
 exports.customer_take_supervisor_permission = async function(req,res){
 //   req.body = {
 //     "user_id":"12",
