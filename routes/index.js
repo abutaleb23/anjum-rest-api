@@ -6032,21 +6032,62 @@ exports.customer_cart_supervisor_status = async function(req,res){
   else res.end( JSON.stringify({ response: 2, message: Messages["en"].WRONG_DATA }) )
 }
 
-exports.customer_credit_limit_exceed_requests_to_supervisor = async function(req,res){
+exports.get_credit_limit_exceed_requests_list = async function(req,res){
 //   req.body = {
 //     "user_id":"12",
 //     "supervisor_id":"58" 
 //   }
-  const { user_id, supervisor_id} = req.body
-  if(isAllValid(user_id, supervisor_id) ){
+  console.log(req.body)
+  
+  if(isAllValid(req.body.user_id) ){
+
+    const where_cond = {}
+    where_cond.user_id = req.body.user_id;
+    where_cond.supervisor_status = 'pending'
+    if (isAllValid(req.body.supervisor_id)) where_cond.supervisor_id = req.body.supervisor_id;
+    if (isAllValid(req.body.salesmanager_id)) where_cond.salesmanager_id = req.body.salesmanager_id;
+    
     try{
       const data = await Models.SalesOrderRequest.findAll({
-        supervisor_status: 'pending',
-        supervisor_id: supervisor_id
+        where_cond,
+        include: [
+          {
+            model: Models.Employees,
+            as: "employee_detail_in_sales_order_request",
+            attributes: {
+              include: [
+                "id",
+                "user_id",
+                "employee_name_en",
+                "employee_name_ar",
+                "phone_no",
+                "username"
+              ]
+            }
+          },
+          {
+            model: Models.Stores,
+            as: "store_detail_in_sales_order_request",
+            attributes: {
+              include: [
+                "id",
+                "user_id",
+                "store_number",
+                "store_name_en",
+                "store_name_ar",
+                "reference",
+                "note",
+                "status"
+              ]
+            }
+          }
+        ],
+        order: [["id", "DESC"]]
       })
       res.end( JSON.stringify({ response:1, message: Messages['en'].SUCCESS_FETCH, result: data }))
     }
     catch(err){
+      console.log(err)
       res.end( JSON.stringify({ response:0, message: Messages["en"].ERROR_FETCH }))
     }
   }
