@@ -66,7 +66,8 @@ app.post('/employee/getUnloadRequestItemsList', routes.get_unload_request_items_
 
 /*Sahil @16-april-19 starts*/
 app.post('/employee/addItemsToSalesCart', routes.add_items_to_sales_cart);
-app.post('/employee/salesCartItemsList', routes.sales_cart_items_list);
+// for cart and for view details in supervisor exceed limit request list
+app.post('/employee/salesCartItemsList', routes.sales_cart_items_list); 
 app.post('/employee/deleteSalesCartItems', routes.delete_sales_cart_items);
 app.post('/employee/deleteAllSalesCartItems', routes.delete_all_sales_cart_items);
 

@@ -5271,8 +5271,8 @@ exports.sales_cart_items_list = function(req, res) {
 			where: {
 				user_id: req.body.user_id,
 				employee_id: req.body.employee_id,
-        customer_id: req.body.customer_id,
-        cart_type: req.body.cart_type
+                customer_id: req.body.customer_id,
+                cart_type: req.body.cart_type
 			},
 			include: [
 				{
@@ -5873,6 +5873,7 @@ exports.customer_stock_quantity_permission_status = async function(req,res){
 exports.customer_take_supervisor_permission = async function(req,res){
 //   req.body = {
 //     "user_id":"12",
+//     "cart_id": "55",
 //     "payment_type":"credit",
 //     "employee_id":"59",
 //     "store_id":"32",
@@ -5910,30 +5911,47 @@ exports.customer_take_supervisor_permission = async function(req,res){
 	if (isAllValid(req.body.sales_order_arr, req.body.user_id, req.body.employee_id,
     req.body.customer_id, req.body.supervisor_id, req.body.store_id, req.body.level) ) {
     
-    /*
-      1. customer may take permission for first time
-      2. took permission many times, it is the updated permission taking 
-      3. all the requests may be in pending or rejected 
+    /* 
+        already requested for exceed limit
+        -> if yes 
+            -> check status of the requst
+                -> accepted -> only submit / can't edit / can't request again
+                -> pending -> can't submit / can't edit / can't request again
+                -> rejected -> can edit / can submit / can request
+        -> if no
+            -> can edit / can submit / can request
     */
 
-    /* being deleted old requests with status 'pending' or 'rejected'*/
+    if(isAllValid(req.body.cart_id)){
+        try{
+            const cart = await Models.SalesOrderRequest.find({
+                where:{
+                    id: req.body.cart_id
+                }
+            })
 
-    try{
-      await Models.SalesOrderRequest.destroy({
-        where: {
-          user_id: req.body.user_id,
-          employee_id: req.body.employee_id,
-          customer_id: req.body.customer_id,
-          $or:[ { supervisor_status: 'pending'}, { supervisor_status: 'rejected' } ]
+            if(cart.supervisor_status == 'accepted') return res.end(JSON.stringify({ response: 1, message: 'Your exceed limit request have been accepted. You can not request now.', result: cart.id}))
+            if(cart.supervisor_status == 'pending') return res.end(JSON.stringify({ response: 1, message: 'Your exceed limit request is now in pending, wait for the approval of your request', result: cart.id}))
+            
+            const dest = await Models.SalesOrderRequest.destroy({
+                where: {
+                    id: req.body.cart_id,
+                    supervisor_status: 'rejected'
+                }
+            })
+            console.log('Deleted last rejected request, if there is')
         }
-      })
-
-      console.log('all the requests before are deleted')
-    }
-    catch(err){
-      console.log('at the time of deleting all the past requests ', err)
+        catch(err){
+            console.log('error, as there are no cart request before')
+        }
     }
 
+    /*
+        here comes that means there was no exceed limit request of the cart before,
+        and if there was, then that request is deleted already, as supervisor 
+        rejected that request. so salesman can proceed now to request the current cart for
+        exceed limit request
+    */
     let sales_order_arr = [];
     
     if (!Array.isArray(req.body.sales_order_arr)) sales_order_arr = [req.body.sales_order_arr];
@@ -5967,7 +5985,7 @@ exports.customer_take_supervisor_permission = async function(req,res){
     try{
       const salesOrderRequest = await Models.SalesOrderRequest.create(create_sales)
       console.log("Created successfully ============>", salesOrderRequest) 
-      res.end( JSON.stringify({ response: 1, message: Messages["en"].SUCCESS_INSERT, cart_id: salesOrderRequest.id, cart_total_price: salesOrderRequest.total_price }))
+      res.end( JSON.stringify({ response: 1, message: Messages["en"].SUCCESS_INSERT, cart_id: salesOrderRequest.id}))
     }
     catch(err){
       return res.end( JSON.stringify({ response: 0, message: Messages["en"].ERROR_CREATE }) );
@@ -6023,7 +6041,16 @@ exports.customer_cart_supervisor_status = async function(req,res){
           id: req.body.cart_id
         }
       })
-      res.end( JSON.stringify({ response: 1, message: Messages["en"].SUCCESS_FETCH, result: data.supervisor_status }))
+      if(data.supervisor_status!='rejected') res.end( JSON.stringify({ response: 1, message: Messages["en"].SUCCESS_FETCH, result: data.supervisor_status }))
+      
+      
+      const dest = await Models.SalesOrderRequest.destroy({
+          where:{
+              id: req.body.cart_id,
+              supervisor_status: 'rejected'
+          }
+      })
+      res.end(JSON.stringify({ response: 1, message: 'Successfully Deleted the rejected request' }))
     }
     catch(err){
       res.end( JSON.stringify({ response:0, message: Messages["en"].ERROR_FETCH }) )
