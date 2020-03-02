@@ -86,7 +86,7 @@ app.post('/employee/supervisor-reject-customers-credit-limit-exceed-request', ro
 app.post('/employee/customers-set-currency', routes.customer_set_currency)
 app.post('/employee/getCreditLimitExceedRequestsList', routes.get_credit_limit_exceed_requests_list)
 app.post('/employee/customers-stock-quantity-permission-status', routes.customer_stock_quantity_permission_status)
-
+app.post('/employee/supervisor-view-salesman-exceed-limit-products', routes.supervisor_view_salesman_exceed_limit_products)
 app.get('/employee/customers-available-get-currencies', routes.customer_available_get_currencies)
 
 

@@ -4549,37 +4549,37 @@ exports.get_unload_request_items_list = function(req, res) {
 
 exports.add_items_to_sales_cart = function(req, res) {
 	// req.body = {
-    //     "user_id": "7",
-    //     "employee_id": "13",
-    //     "customer_id": "88",
-    //     "item_id": "1",
-    //     "quantity": "30",
-    //     "unit_id": "23",
-    //     "total_price": 1575,
-    //     "total_price_before_tax": 1500,
-    //     "total_tax": 75,
-    //     "base_price_per_unit": 50,
-    //     "tax_type": "percentage",
-    //     "total_price_with_tax": 1575,
-    //     "cart_type": "invoice" or "return_invoice" or "order"
-    //     "promotions_data": [{
-    //     "promotion_id": "76",
-    //     "promotion_type": "range",
-    //     "promotion_bonus_item_id": "4",
-    //     "promotion_bonus_quantity": "40"
-    //     }, {
-    //     "promotion_id": "62",
-    //     "promotion_type": "range",
-    //     "promotion_bonus_item_id": "4",
-    //     "promotion_bonus_quantity": "30"
-    //     }, {
-    //     "promotion_id": "34",
-    //     "promotion_type": "package",
-    //     "discount_type": "value",
-    //     "discount_amount": "20",
-    //     "discount_percentage": ""
-    //     }]
-    // };
+  //       "user_id": "7",
+  //       "employee_id": "13",
+  //       "customer_id": "88",
+  //       "item_id": "1",
+  //       "quantity": "30",
+  //       "unit_id": "23",
+  //       "total_price": 1575,
+  //       "total_price_before_tax": 1500,
+  //       "total_tax": 75,
+  //       "base_price_per_unit": 50,
+  //       "tax_type": "percentage",
+  //       "total_price_with_tax": 1575,
+  //       "cart_type": "invoice" or "return_invoice" or "order"
+  //       "promotions_data": [{
+  //       "promotion_id": "76",
+  //       "promotion_type": "range",
+  //       "promotion_bonus_item_id": "4",
+  //       "promotion_bonus_quantity": "40"
+  //       }, {
+  //       "promotion_id": "62",
+  //       "promotion_type": "range",
+  //       "promotion_bonus_item_id": "4",
+  //       "promotion_bonus_quantity": "30"
+  //       }, {
+  //       "promotion_id": "34",
+  //       "promotion_type": "package",
+  //       "discount_type": "value",
+  //       "discount_amount": "20",
+  //       "discount_percentage": ""
+  //       }]
+  //   };
 
 	console.log("add items to sales cart data =====================", req.body);
     if ( isAllValid(req.body.user_id, req.body.item_id, req.body.employee_id, req.body.customer_id, req.body.unit_id, req.body.quantity,
@@ -5262,6 +5262,47 @@ exports.customer_payment_method = function(req,res){
   })
 }
 
+exports.supervisor_view_salesman_exceed_limit_products = async function(req,res){
+  //req.body = {"user_id":"7", "employee_id":"44", "customer_id":"88", "cart_type": "invoice"};
+  console.log("Sales cart item list req body >>>>>>>>>>>>>>>>>..", req.body)
+  if(isAllValid(req.body.user_id, req.body.employee_id, req.body.customer_id, req.body.cart_type)){
+    try{
+      const data = await Models.SalesOrderCartDetail.findAll({
+        where: {
+          user_id: req.body.user_id,
+          employee_id: req.body.employee_id,
+          customer_id: req.body.customer_id,
+          cart_type: req.body.cart_type
+        },
+        include: [
+          {
+            model: Models.Items,
+            as: "item_detail_in_sales_cart",
+            include: [
+              {
+                model: Models.ItemUnitConversion,
+                as: "item_measurement_units",
+                include: [
+                  {
+                    model: Models.MeasurementUnit,
+                    as: "measurement_unit_in_unit_conversion",
+                    required: false
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      })
+      return res.end(JSON.stringify({ response: 1, message: Messages['en'].SUCCESS_FETCH, result: data}))
+    }
+    catch(e){
+      return res.end(JSON.stringify({ response: 0, message: Messages['en'].ERROR_FETCH}))
+    }
+  }
+  else return res.end(JSON.stringify({ respones: 0, message: Messages['en'].WRONG_DATA}))
+}
+
 exports.sales_cart_items_list = function(req, res) {
 	// req.body = {"user_id":"7", "employee_id":"44", "customer_id":"88", "price_list_id":"2", "cart_type": "return_invoice"};
 	console.log("sales cart item list req body >>>>>>>>>>>>>>>>>>..", req.body);
@@ -5271,8 +5312,8 @@ exports.sales_cart_items_list = function(req, res) {
 			where: {
 				user_id: req.body.user_id,
 				employee_id: req.body.employee_id,
-                customer_id: req.body.customer_id,
-                cart_type: req.body.cart_type
+        customer_id: req.body.customer_id,
+        cart_type: req.body.cart_type
 			},
 			include: [
 				{
