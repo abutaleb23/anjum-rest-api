@@ -6237,10 +6237,10 @@ exports.customer_cart_supervisor_status = async function(req,res){
       return res.end(JSON.stringify({ response: 1, message: 'Successfully Deleted the rejected request' }))
     }
     catch(err){
-      res.end( JSON.stringify({ response:0, message: Messages["en"].ERROR_FETCH }) )
+      return res.end( JSON.stringify({ response:0, message: Messages["en"].ERROR_FETCH }) )
     }
   }
-  else res.end( JSON.stringify({ response: 2, message: Messages["en"].WRONG_DATA }) )
+  else return res.end( JSON.stringify({ response: 2, message: Messages["en"].WRONG_DATA }) )
 }
 
 exports.get_credit_limit_exceed_requests_list = async function(req,res){
@@ -6321,7 +6321,7 @@ exports.exceed_limit_request_change_status_supervisor = async function(req,res){
       return res.end(JSON.stringify({ response: 1, message: Messages['en'].SUCCESS_UPDATE, result: data }))
     }
     catch(err){
-      console.log(err)
+      console.log(err) 
       return res.end(JSON.stringify({ response:0, message: Messages['en'].ERROR_CREATE }))
     }
   }
