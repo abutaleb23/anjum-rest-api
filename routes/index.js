@@ -5264,10 +5264,6 @@ exports.adjust_items_from_sales_cart = async function(req, res) {
 
             console.log('Updated Stock Item Quantity =============> ', updatedStockItemQuantity)
 
-            const requestData = await Models.SalesOrderRequestDetail.create( create_sales_req)
-
-            console.log('Sales order request detail created =================>', requestData)
-
             const destCart = await Models.SalesOrderCartDetail.destroy({
               where: {
                 user_id: user_id,
@@ -5282,62 +5278,62 @@ exports.adjust_items_from_sales_cart = async function(req, res) {
             
             if(i == sales_order_arr.length-1) {
               if( i == sales_order_arr.length - 1 ){
-                // try{
-                //   // const addTimeline = Models.Timelines.create({
-                //   //   content_id: salesOrderRequest.id,
-                //   //   content_type: timeline_content_type,
-                //   //   user_id: req.body.user_id,
-                //   //   employee_id: req.body.employee_id,
-                //   //   customer_id: req.body.customer_id,
-                //   //   battery_life: req.body.battery_life,
-                //   //   android_version: req.body.android_version,
-                //   //   app_version: req.body.app_version,
-                //   //   latitude: req.body.latitude,
-                //   //   longitude: req.body.longitude
-                //   // })
+                try{
+                  const addTimeline = Models.Timelines.create({
+                    content_id: salesOrderRequest.id,
+                    content_type: timeline_content_type,
+                    user_id: req.body.user_id,
+                    employee_id: req.body.employee_id,
+                    customer_id: req.body.customer_id,
+                    battery_life: req.body.battery_life,
+                    android_version: req.body.android_version,
+                    app_version: req.body.app_version,
+                    latitude: req.body.latitude,
+                    longitude: req.body.longitude
+                  })
                   
-                //   // let notify_title = req.body.request_type == "invoice" ? "Invoice Request" : req.body.request_type == "return_invoice"
-                //   //   ? "Return Invoice Request" : "Sales Order Request";
-                //   // let notify_desc = req.body.request_type == "invoice"
-                //   //   ? "You Have New Invoice Request" : req.body.request_type == "return_invoice"
-                //   //   ? "You Have New Return Invoice Request" : "You Have New Sales Order Request";
-                //   // let gcm_req_type = req.body.request_type == "invoice" ? "invoice" : req.body.request_type == "return_invoice" ? "return_invoice" : "sales_order";
+                  let notify_title = req.body.request_type == "invoice" ? "Invoice Request" : req.body.request_type == "return_invoice"
+                    ? "Return Invoice Request" : "Sales Order Request";
+                  let notify_desc = req.body.request_type == "invoice"
+                    ? "You Have New Invoice Request" : req.body.request_type == "return_invoice"
+                    ? "You Have New Return Invoice Request" : "You Have New Sales Order Request";
+                  let gcm_req_type = req.body.request_type == "invoice" ? "invoice" : req.body.request_type == "return_invoice" ? "return_invoice" : "sales_order";
                   
-                //   // let gcm_obj = {};
+                  let gcm_obj = {};
                   
-                //   // (gcm_obj.req_type = gcm_req_type), (gcm_obj.action = "request");
-                //   //     // try{
-                //   // if(isAllValid(salesOrderRequest.supervisor_id) ) {
-                //   //   console.log("supervisor_id ===================", salesOrderRequest.supervisor_id);
+                  (gcm_obj.req_type = gcm_req_type), (gcm_obj.action = "request");
+                      // try{
+                  if(isAllValid(salesOrderRequest.supervisor_id) ) {
+                    console.log("supervisor_id ===================", salesOrderRequest.supervisor_id);
                         
-                //   //   try{
-                //   //     const gcmDev = await Models.GcmDevices.findOne({
-                //   //       where: {
-                //   //         employee_id: salesOrderRequest.supervisor_id
-                //   //       }
-                //   //     })
+                    try{
+                      const gcmDev = await Models.GcmDevices.findOne({
+                        where: {
+                          employee_id: salesOrderRequest.supervisor_id
+                        }
+                      })
                       
-                //   //     console.log("supervisor_id sending notify", gcmDev);
-                //   //     if (gcmDev != null && gcmDev.device_token != null) {
-                //   //       console.log("push notification function ======================");  
-                //   //       _sendPushNotificationAndroid( gcmDev.device_token, notify_title, notify_desc, gcm_obj )
-                //   //     } 
-                //   //     else console.log("data is null in gcmDev supervisor");
+                      console.log("supervisor_id sending notify", gcmDev);
+                      if (gcmDev != null && gcmDev.device_token != null) {
+                        console.log("push notification function ======================");  
+                        _sendPushNotificationAndroid( gcmDev.device_token, notify_title, notify_desc, gcm_obj )
+                      } 
+                      else console.log("data is null in gcmDev supervisor");
       
-                //   //     console.log("sales order finish herehuhu =======================", 1);
-                //       // return res.end( JSON.stringify({ response: 1, message: Messages["en"].SUCCESS_INSERT, request_id: salesOrderRequest.id }) );
-                //     // }
-                //     // catch(err){
-                //     //   console.log("error in sending notification");
-                //     // }
-                //   }
-                //   console.log("invoice added in timeline =============");
-                // }
-                // catch(err){
-                //   console.log( "error while adding invoice in timeline =============" );
-                //   console.log("error in add timeline", error);
-                // }
-                return res.end( JSON.stringify({ response: 1, message: Messages["en"].SUCCESS_INSERT, request_id: salesOrderRequest.id }) );
+                      console.log("sales order finish herehuhu =======================", 1);
+                      return res.end( JSON.stringify({ response: 1, message: Messages["en"].SUCCESS_INSERT, request_id: salesOrderRequest.id }) );
+                    }
+                    catch(err){
+                      console.log("error in sending notification");
+                    }
+                  }
+                  console.log("invoice added in timeline =============");
+                }
+                catch(err){
+                  console.log( "error while adding invoice in timeline =============" );
+                  console.log("error in add timeline", error);
+                }
+                //return res.end( JSON.stringify({ response: 1, message: Messages["en"].SUCCESS_INSERT, request_id: salesOrderRequest.id }) );
               }
             }
           }
