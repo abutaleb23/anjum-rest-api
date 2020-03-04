@@ -5229,13 +5229,39 @@ exports.adjust_items_from_sales_cart = async function(req, res) {
 
       for ( let i = 0; i < sales_order_arr.length; i++) {
 
-        if( isAllValid(sales_order_arr[i].item_id, sales_order_arr[i].measurement_unit_id) ) {
+        if( sales_order_arr[i].item_id && sales_order_arr[i].category_id && sales_order_arr[i].measurement_unit_id && sales_order_arr[i].quantity ) {
           console.log('Sales Order Arr [i] ==========>', sales_order_arr[i])
           
-          // Finding the product. I will just increase the stock amount 
-          console.log("debug: ", user_id, store_id, sales_order_arr[i].item_id, sales_order_arr[i].measurement_unit_id)
+          const create_sales_req = {};
+          
+          create_sales_req.user_id = req.body.user_id;
+          create_sales_req.employee_id = req.body.employee_id;
+          create_sales_req.customer_id = req.body.customer_id;
+          create_sales_req.store_id = req.body.store_id;
+          create_sales_req.sales_manager_id = req.body.sales_manager_id;
+          create_sales_req.item_id = sales_order_arr[i].item_id;
+          create_sales_req.category_id = sales_order_arr[i].category_id;
+          create_sales_req.sales_order_request_id = request_id;
+          create_sales_req.measurement_unit_id = sales_order_arr[i].measurement_unit_id;
+          create_sales_req.quantity = sales_order_arr[i].quantity;
+          create_sales_req.base_price_per_unit = sales_order_arr[i].base_price_per_unit;
+          create_sales_req.total_price = sales_order_arr[i].total_price;
+          create_sales_req.total_price_before_tax = sales_order_arr[i].total_price_before_tax;
+          create_sales_req.total_tax = sales_order_arr[i].total_tax;
+          create_sales_req.tax_type = sales_order_arr[i].tax_type;
 
+          if ( isAllValid(sales_order_arr[i].total_price_with_tax, sales_order_arr[i].total_price_with_tax)) {
+            create_sales_req.total_price_with_tax = sales_order_arr[i].total_price_with_tax;
+          }
+
+          if ( isAllValid(sales_order_arr[i].bonus, sales_order_arr[i].bonus) ) create_sales_req.bonus = sales_order_arr[i].bonus
+          else create_sales_req.bonus = 0
+
+        // =======================================================================================
           try{
+            const requestData = await Models.SalesOrderRequestDetail.create( create_sales_req )
+            console.log("request data is created", requestData)
+
             const stockItemData = await Models.StockItems.findOne({
               where: {
                 user_id: user_id,
@@ -5273,72 +5299,72 @@ exports.adjust_items_from_sales_cart = async function(req, res) {
               }
             })
 
-            console.log('Destroied the cart from return invoice')
+            console.log('Destroyed the cart from return invoice')
 
             
             if(i == sales_order_arr.length-1) {
               if( i == sales_order_arr.length - 1 ){
-                // try{
-                //   const addTimeline = Models.Timelines.create({
-                //     content_id: salesOrderRequest.id,
-                //     content_type: timeline_content_type,
-                //     user_id: req.body.user_id,
-                //     employee_id: req.body.employee_id,
-                //     customer_id: req.body.customer_id,
-                //     battery_life: req.body.battery_life,
-                //     android_version: req.body.android_version,
-                //     app_version: req.body.app_version,
-                //     latitude: req.body.latitude,
-                //     longitude: req.body.longitude
-                //   })
+                try{
+                  const addTimeline = Models.Timelines.create({
+                    content_id: salesOrderRequest.id,
+                    content_type: timeline_content_type,
+                    user_id: req.body.user_id,
+                    employee_id: req.body.employee_id,
+                    customer_id: req.body.customer_id,
+                    battery_life: req.body.battery_life,
+                    android_version: req.body.android_version,
+                    app_version: req.body.app_version,
+                    latitude: req.body.latitude,
+                    longitude: req.body.longitude
+                  })
                   
-                //   let notify_title = req.body.request_type == "invoice" ? "Invoice Request" : req.body.request_type == "return_invoice"
-                //     ? "Return Invoice Request" : "Sales Order Request";
-                //   let notify_desc = req.body.request_type == "invoice"
-                //     ? "You Have New Invoice Request" : req.body.request_type == "return_invoice"
-                //     ? "You Have New Return Invoice Request" : "You Have New Sales Order Request";
-                //   let gcm_req_type = req.body.request_type == "invoice" ? "invoice" : req.body.request_type == "return_invoice" ? "return_invoice" : "sales_order";
+                  let notify_title = req.body.request_type == "invoice" ? "Invoice Request" : req.body.request_type == "return_invoice"
+                    ? "Return Invoice Request" : "Sales Order Request";
+                  let notify_desc = req.body.request_type == "invoice"
+                    ? "You Have New Invoice Request" : req.body.request_type == "return_invoice"
+                    ? "You Have New Return Invoice Request" : "You Have New Sales Order Request";
+                  let gcm_req_type = req.body.request_type == "invoice" ? "invoice" : req.body.request_type == "return_invoice" ? "return_invoice" : "sales_order";
                   
-                //   let gcm_obj = {};
+                  let gcm_obj = {};
                   
-                //   (gcm_obj.req_type = gcm_req_type), (gcm_obj.action = "request");
-                //       // try{
-                //   if(isAllValid(salesOrderRequest.supervisor_id) ) {
-                //     console.log("supervisor_id ===================", salesOrderRequest.supervisor_id);
+                  (gcm_obj.req_type = gcm_req_type), (gcm_obj.action = "request");
+                      // try{
+                  if(isAllValid(salesOrderRequest.supervisor_id) ) {
+                    console.log("supervisor_id ===================", salesOrderRequest.supervisor_id);
                         
-                //     try{
-                //       const gcmDev = await Models.GcmDevices.findOne({
-                //         where: {
-                //           employee_id: salesOrderRequest.supervisor_id
-                //         }
-                //       })
+                    try{
+                      const gcmDev = await Models.GcmDevices.findOne({
+                        where: {
+                          employee_id: salesOrderRequest.supervisor_id
+                        }
+                      })
                       
-                //       console.log("supervisor_id sending notify", gcmDev);
-                //       if (gcmDev != null && gcmDev.device_token != null) {
-                //         console.log("push notification function ======================");  
-                //         _sendPushNotificationAndroid( gcmDev.device_token, notify_title, notify_desc, gcm_obj )
-                //       } 
-                //       else console.log("data is null in gcmDev supervisor");
+                      console.log("supervisor_id sending notify", gcmDev);
+                      if (gcmDev != null && gcmDev.device_token != null) {
+                        console.log("push notification function ======================");  
+                        _sendPushNotificationAndroid( gcmDev.device_token, notify_title, notify_desc, gcm_obj )
+                      } 
+                      else console.log("data is null in gcmDev supervisor");
       
-                //       console.log("sales order finish herehuhu =======================", 1);
-                //       return res.end( JSON.stringify({ response: 1, message: Messages["en"].SUCCESS_INSERT, request_id: salesOrderRequest.id }) );
-                //     }
-                //     catch(err){
-                //       console.log("error in sending notification");
-                //     }
-                //   }
-                //   console.log("invoice added in timeline =============");
-                // }
-                // catch(err){
-                //   console.log( "error while adding invoice in timeline =============" );
-                //   console.log("error in add timeline", error);
-                // }
-                return res.end( JSON.stringify({ response: 1, message: Messages["en"].SUCCESS_INSERT, request_id: salesOrderRequest.id }) );
+                      console.log("sales order finish herehuhu =======================", 1);
+                      return res.end( JSON.stringify({ response: 1, message: Messages["en"].SUCCESS_INSERT, request_id: salesOrderRequest.id }) );
+                    }
+                    catch(err){
+                      console.log("error in sending notification");
+                    }
+                  }
+                  console.log("invoice added in timeline =============");
+                }
+                catch(err){
+                  console.log( "error while adding invoice in timeline =============" );
+                  console.log("error in add timeline", error);
+                }
+                //return res.end( JSON.stringify({ response: 1, message: Messages["en"].SUCCESS_INSERT, request_id: salesOrderRequest.id }) );
               }
             }
           }
           catch(err){
-            res.end( JSON.stringify({ response: 3, message: 'Error Occured' }) )
+            return res.end( JSON.stringify({ response: 3, message: 'Error Occured' }) )
           }
         }
         else return res.end(JSON.stringify({ response: 0, message: Messages['en'].WRONG_DATA }))
