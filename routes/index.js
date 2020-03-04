@@ -5037,10 +5037,27 @@ exports.add_items_to_sales_cart = function(req, res) {
 	}
 };
 
-/* updating invoice and return invoice features */
-
 /*
-	1. check message response is correct
+    1. submit of 3 types
+    2. invoice
+      1. he requested exceed limit before 
+        => if pending, don't let him submit
+        => if rejected, then it's like new submission
+        => if accepted, accept his submission
+      2. he want to submit to invoice his products 
+        => check whether he exceeds his limit
+        => accept his submission
+          -> check stock quantity of every product
+          -> modify the stock quantity
+          -> save sales order invoice stock items (confusion why this data is saved)
+          -> saved each in sales order request details
+          -> check for promotion and save 
+          -> processing last product, need to add timeline, so latitude and longitued is saved.
+
+          -> check promotion and save the pro
+    3. return invoice
+    4. order
+
 */
 
 exports.adjust_items_from_sales_cart = async function(req, res) {
@@ -5166,68 +5183,172 @@ exports.adjust_items_from_sales_cart = async function(req, res) {
 	if ( isAllValid(user_id, employee_id, customer_id, store_id ) ) {
 
     let sales_order_arr = [];
-
-		if (!Array.isArray(req.body.sales_order_arr)) sales_order_arr = [req.body.sales_order_arr];
-    else sales_order_arr = req.body.sales_order_arr;
-
     
+		if (!Array.isArray(req.body.sales_order_arr)) sales_order_arr = [req.body.sales_order_arr];
+		else sales_order_arr = req.body.sales_order_arr;
 
-    for ( let i = 0; i < sales_order_arr.length; i++) {
+		let create_sales = {};
 
-      if( isAllValid(sales_order_arr[i].item_id, sales_order_arr[i].measurement_unit_id) ) {
-        console.log('Sales Order Arr [i] ==========>', sales_order_arr[i])
+		create_sales.user_id = req.body.user_id;
+		create_sales.request_level = req.body.level;
+		create_sales.employee_id = req.body.employee_id;
+		create_sales.customer_id = req.body.customer_id;
+		create_sales.store_id = req.body.store_id;
+		create_sales.supervisor_id = req.body.supervisor_id;
+		create_sales.no_of_items = sales_order_arr.length;
+
+		if ( req.body.level > 1 && (req.body.salesmanager_id == null || req.body.salesmanager_id == "") ) {
+			return res.end( JSON.stringify({ response: 2, message: Messages["en"].WRONG_DATA }));
+    } 
+    else if (req.body.level > 1) {
+			create_sales.salesmanager_id = req.body.salesmanager_id;
+			create_sales.salesmanager_status = "pending";
+    }
+
+    create_sales.supervisor_status = "accepted"
+		create_sales.total_price_without_tax_discount = req.body.total_price_without_tax_discount;
+		create_sales.total_tax = req.body.total_tax;
+		create_sales.total_discount = req.body.total_discount;
+		create_sales.total_price = req.body.total_price;
+		create_sales.request_type =
+			req.body.request_type == "invoice" ? "invoice" : req.body.request_type == "return_invoice" ? "return_invoice" : "sales";
         
-        // Finding the product. I will just increase the stock amount 
-        console.log("debug: ", user_id, store_id, sales_order_arr[i].item_id, sales_order_arr[i].measurement_unit_id)
+    
+    try{
+      const salesOrderRequest = await Models.SalesOrderRequest.create(create_sales)
+      
+      console.log("Created successfully =====================================>", salesOrderRequest)
 
-        try{
-          const stockItemData = await Models.StockItems.findOne({
-            where: {
-              user_id: user_id,
-              store_id: store_id,
-              item_id: sales_order_arr[i].item_id,
-              measurement_unit_id: sales_order_arr[i].measurement_unit_id
-            }
-          })
+      if( !isAllValid(salesOrderRequest.id)) return res.end( JSON.stringify({ response: 0, message: Messages["en"].ERROR_CREATE }))
+    
+      console.log("q step 1 sales order request id", salesOrderRequest.id);
+      let request_id = salesOrderRequest.id;
+      let sales_order_arr_quantity = "true";
+      let timeline_content_type = req.body.request_type == "invoice" 
+        ? "invoice_order" : req.body.request_type == "return_invoice" ? "return_invoice_order" : "sales_order";
 
-          console.log('Stock item data ===========> ', stockItemData)
+      for ( let i = 0; i < sales_order_arr.length; i++) {
 
-          let stock_item_data_quantity = stockItemData.quantity
-          if( stockItemData.quantity == null) stock_item_data_quantity = 0;
-
-          const present_quantity = ( parseInt(stock_item_data_quantity) + parseInt(sales_order_arr[i].quantity) ).toString();
+        if( isAllValid(sales_order_arr[i].item_id, sales_order_arr[i].measurement_unit_id) ) {
+          console.log('Sales Order Arr [i] ==========>', sales_order_arr[i])
           
-          const updatedStockItemQuantity = await Models.StockItems.update({ quantity: present_quantity },
-            { 
+          // Finding the product. I will just increase the stock amount 
+          console.log("debug: ", user_id, store_id, sales_order_arr[i].item_id, sales_order_arr[i].measurement_unit_id)
+
+          try{
+            const stockItemData = await Models.StockItems.findOne({
               where: {
                 user_id: user_id,
                 store_id: store_id,
                 item_id: sales_order_arr[i].item_id,
                 measurement_unit_id: sales_order_arr[i].measurement_unit_id
               }
-          })
+            })
 
-          console.log('Updated Stock Item Quantity =============> ', updatedStockItemQuantity)
+            console.log('Stock item data ===========> ', stockItemData)
 
-          Models.SalesOrderCartDetail.destroy({
-            where: {
-              user_id: user_id,
-              employee_id: employee_id,
-              customer_id: customer_id,
-              item_id: sales_order_arr[i].item_id
-            }
-          }).then( destCart =>{
+            let stock_item_data_quantity = stockItemData.quantity
+            if( stockItemData.quantity == null) stock_item_data_quantity = 0;
+
+            const present_quantity = ( parseInt(stock_item_data_quantity) + parseInt(sales_order_arr[i].quantity) ).toString();
+            
+            const updatedStockItemQuantity = await Models.StockItems.update({ quantity: present_quantity },
+              { 
+                where: {
+                  user_id: user_id,
+                  store_id: store_id,
+                  item_id: sales_order_arr[i].item_id,
+                  measurement_unit_id: sales_order_arr[i].measurement_unit_id
+                }
+            })
+
+            console.log('Updated Stock Item Quantity =============> ', updatedStockItemQuantity)
+
+            const requestData = await Models.SalesOrderRequestDetail.create( create_sales_req)
+
+            console.log('Sales order request detail created =================>', requestData)
+
+            const destCart = await Models.SalesOrderCartDetail.destroy({
+              where: {
+                user_id: user_id,
+                employee_id: employee_id,
+                customer_id: customer_id,
+                item_id: sales_order_arr[i].item_id
+              }
+            })
+
             console.log('Destroied the cart from return invoice')
-            if(i == sales_order_arr.length-1) return res.end(JSON.stringify({ response:1, message: Messages['en'].SUCCESS_INSERT }))
-          }).catch(err=>{
-            console.log(err)
-          })
+
+            
+            if(i == sales_order_arr.length-1) {
+              if( i == sales_order_arr.length - 1 ){
+                try{
+                  const addTimeline = Models.Timelines.create({
+                    content_id: salesOrderRequest.id,
+                    content_type: timeline_content_type,
+                    user_id: req.body.user_id,
+                    employee_id: req.body.employee_id,
+                    customer_id: req.body.customer_id,
+                    battery_life: req.body.battery_life,
+                    android_version: req.body.android_version,
+                    app_version: req.body.app_version,
+                    latitude: req.body.latitude,
+                    longitude: req.body.longitude
+                  })
+                  
+                  let notify_title = req.body.request_type == "invoice" ? "Invoice Request" : req.body.request_type == "return_invoice"
+                    ? "Return Invoice Request" : "Sales Order Request";
+                  let notify_desc = req.body.request_type == "invoice"
+                    ? "You Have New Invoice Request" : req.body.request_type == "return_invoice"
+                    ? "You Have New Return Invoice Request" : "You Have New Sales Order Request";
+                  let gcm_req_type = req.body.request_type == "invoice" ? "invoice" : req.body.request_type == "return_invoice" ? "return_invoice" : "sales_order";
+                  
+                  let gcm_obj = {};
+                  
+                  (gcm_obj.req_type = gcm_req_type), (gcm_obj.action = "request");
+                      // try{
+                  if(isAllValid(salesOrderRequest.supervisor_id) ) {
+                    console.log("supervisor_id ===================", salesOrderRequest.supervisor_id);
+                        
+                    try{
+                      const gcmDev = await Models.GcmDevices.findOne({
+                        where: {
+                          employee_id: salesOrderRequest.supervisor_id
+                        }
+                      })
+                      
+                      console.log("supervisor_id sending notify", gcmDev);
+                      if (gcmDev != null && gcmDev.device_token != null) {
+                        console.log("push notification function ======================");  
+                        _sendPushNotificationAndroid( gcmDev.device_token, notify_title, notify_desc, gcm_obj )
+                      } 
+                      else console.log("data is null in gcmDev supervisor");
+      
+                      console.log("sales order finish herehuhu =======================", 1);
+                      return res.end( JSON.stringify({ response: 1, message: Messages["en"].SUCCESS_INSERT, request_id: salesOrderRequest.id }) );
+                    }
+                    catch(err){
+                      console.log("error in sending notification");
+                    }
+                  }
+                  console.log("invoice added in timeline =============");
+                }
+                catch(err){
+                  console.log( "error while adding invoice in timeline =============" );
+                  console.log("error in add timeline", error);
+                }
+              }
+            }
+          }
+          catch(err){
+            res.end( JSON.stringify({ response: 3, message: 'Error Occured' }) )
+          }
         }
-        catch(err){
-          res.end( JSON.stringify({ response: 3, message: 'Error Occured' }) )
-        }
+        else return res.end(JSON.stringify({ response: 0, message: Messages['en'].WRONG_DATA }))
       }
-      else return res.end(JSON.stringify({ response: 0, message: Messages['en'].WRONG_DATA }))
+    }
+    catch(err){
+      return res.end(JSON.stringify({ response: 0, message: Messages['en'].ERROR_CREATE }))
     }
   }
   else res.end( JSON.stringify({ response: 2, message: Messages["en"].WRONG_DATA }) );
@@ -5239,11 +5360,11 @@ exports.adjust_items_from_sales_cart = async function(req, res) {
 */
 
 exports.customer_payment_method = function(req,res){
-  // req.body = {
-	// 	"user_id": "7",
-	// 	"employee_id": "13",
-	// 	"customer_id": "88",
-  // };
+//   req.body = {
+// 		"user_id": "7",
+// 		"employee_id": "13",
+// 		"customer_id": "88",
+//   };
   console.log(req.body)
   const { user_id, customer_id } = req.body
   const { error } = schema.customer_payment_method_schema.validate({ user_id, customer_id })
@@ -6073,8 +6194,7 @@ exports.customer_cart_supervisor_status = async function(req,res){
 
   console.log("Input ============>", req.body)
   
-	if (isAllValid(req.body.sales_order_arr, req.body.user_id, req.body.employee_id,
-    req.body.customer_id, req.body.supervisor_id, req.body.store_id, req.body.level, req.body.cart_id) ) {
+	if (isAllValid(req.body.cart_id) ) {
   
     try{
       const data = await Models.SalesOrderRequest.findOne({
@@ -6082,7 +6202,7 @@ exports.customer_cart_supervisor_status = async function(req,res){
           id: req.body.cart_id
         }
       })
-      if(data.supervisor_status!='rejected') res.end( JSON.stringify({ response: 1, message: Messages["en"].SUCCESS_FETCH, result: data.supervisor_status }))
+      if(data.supervisor_status!='rejected') return res.end( JSON.stringify({ response: 1, message: Messages["en"].SUCCESS_FETCH, result: data.supervisor_status }))
       
       
       const dest = await Models.SalesOrderRequest.destroy({
@@ -6091,7 +6211,7 @@ exports.customer_cart_supervisor_status = async function(req,res){
               supervisor_status: 'rejected'
           }
       })
-      res.end(JSON.stringify({ response: 1, message: 'Successfully Deleted the rejected request' }))
+      return res.end(JSON.stringify({ response: 1, message: 'Successfully Deleted the rejected request' }))
     }
     catch(err){
       res.end( JSON.stringify({ response:0, message: Messages["en"].ERROR_FETCH }) )
@@ -6163,36 +6283,18 @@ exports.get_credit_limit_exceed_requests_list = async function(req,res){
   
 }
 
-exports.supervisor_accept_customer_credit_limit_exceed_request = async function(req,res){
+exports.exceed_limit_request_change_status_supervisor = async function(req,res){
   // req.body = {
   //   "id": 14, // cart id
+  //   "status": "accepted" or "rejected"
   // }
 
-  if(isAllValid(req.body.id)){
+  if(isAllValid(req.body.id, req.body.status)){
     try{
-      const data = await Models.SalesOrderRequest.update({ supervisor_status: 'accepted'}, { 
+      const data = await Models.SalesOrderRequest.update({ supervisor_status: req.body.status}, { 
         where: { id: req.body.id } 
       })
       res.end(JSON.stringify({ response: 1, message: 'You accepted the request', result: data }))
-    }
-    catch(err){
-      console.log(err)
-      res.end(JSON.stringify({ response:0, message: Messages['en'].ERROR_CREATE }))
-    }
-  }
-}
-
-exports.supervisor_reject_customer_credit_limit_exceed_request = async function(req,res){
-  // req.body = {
-  //   "id": 14, // cart id
-  // }
-
-  if(isAllValid(req.body.id)){
-    try{
-      const data = await Models.SalesOrderRequest.update({ supervisor_status: 'rejected'}, { 
-        where: { id: req.body.id } 
-      })
-      res.end(JSON.stringify({ response: 1, message: 'You rejected the request', result: data }))
     }
     catch(err){
       console.log(err)
@@ -6244,10 +6346,33 @@ exports.customer_available_get_currencies = async function(req,res){
     }
 }
 
+/*
+    1. submit of 3 types
+    2. invoice
+      1. he requested exceed limit before 
+        => if pending, don't let him submit
+        => if rejected, then it's like new submission
+        => if accepted, accept his submission
+      2. he want to submit to invoice his products 
+        => check whether he exceeds his limit
+        => accept his submission
+          -> check stock quantity of every product
+          -> modify the stock quantity
+          -> save sales order invoice stock items (confusion why this data is saved)
+          -> saved each in sales order request details
+          -> check for promotion and save 
+          -> processing last product, need to add timeline, so latitude and longitued is saved.
+
+          -> check promotion and save the pro
+    3. return invoice
+    4. order
+
+*/
+
 exports.sales_order_request_submit = async function(req, res) {
-	var sale_req_detail;
-	var cart_data;
-	var promotions_data;
+	let sale_req_detail;
+	let cart_data;
+	let promotions_data;
 	console.log("sales order request submit ===========");
 	// req.body = {
 	// 	"user_id": "7",
@@ -6404,10 +6529,15 @@ exports.sales_order_request_submit = async function(req, res) {
             id: req.body.cart_id
           }
         })
-        if( (oldCart.supervisor_status == 'rejected' || oldCart.supervisor_status == 'pending') &&
-        req.body.total_price == req.body.cart_total_price){
-
-          return res.end( JSON.stringify({ response: 0, message: `You can not order. Your request is, ${oldCart.supervisor_status}` }) )
+        if(oldCart.supervisor_status == 'pending') return res.end( JSON.stringify({ response: 0, message: `You can not order. Your request is, ${oldCart.supervisor_status}` }) )
+        if( oldCart.supervisor_status == 'rejected'){
+          const destCart = await Models.SalesOrderRequest.destroy({
+            where: {
+              id: req.body.cart_id
+            }
+          })
+          console.log('deleted rejected request')
+          req.body.cart_id = null // so no cart id
         }
       }
       catch(err){
@@ -6439,7 +6569,7 @@ exports.sales_order_request_submit = async function(req, res) {
         return res.end( JSON.stringify({ response: 0, message: Messages["en"].ERROR_FETCH }) );
       }
     }
-    /* ---------------- if total price is not more than customer's budget limit ----------------*/
+    /* ---------------- if total price is not more than customer's budget limit or accepted ----------------*/
 
     let sales_order_arr = [];
     
@@ -6457,43 +6587,42 @@ exports.sales_order_request_submit = async function(req, res) {
 		create_sales.no_of_items = sales_order_arr.length;
 
 		if ( req.body.level > 1 && (req.body.salesmanager_id == null || req.body.salesmanager_id == "") ) {
-			res.end( JSON.stringify({ response: 2, message: Messages["en"].WRONG_DATA }));
+			return res.end( JSON.stringify({ response: 2, message: Messages["en"].WRONG_DATA }));
     } 
     else if (req.body.level > 1) {
 			create_sales.salesmanager_id = req.body.salesmanager_id;
 			create_sales.salesmanager_status = "pending";
-		}
+    }
+    
+    /*
+      supervisor status accepted, as it is lower than his budget
+      or exceed limit rquest has been accepted
+    */
 
     create_sales.supervisor_status = "accepted"
-		create_sales.total_price_without_tax_discount =
-			req.body.total_price_without_tax_discount;
+		create_sales.total_price_without_tax_discount = req.body.total_price_without_tax_discount;
 		create_sales.total_tax = req.body.total_tax;
 		create_sales.total_discount = req.body.total_discount;
 		create_sales.total_price = req.body.total_price;
 		create_sales.request_type =
-			req.body.request_type == "invoice"
-				? "invoice"
-				: req.body.request_type == "return_invoice"
-				? "return_invoice"
-        : "sales";
+			req.body.request_type == "invoice" ? "invoice" : req.body.request_type == "return_invoice" ? "return_invoice" : "sales";
         
     /*
-      1. customer may have old pending or rejected requests
+      1. customer may have old rejected requests
       which should be deleted, as it is the the successful submission of the order 
     */
 
-    /* being deleted old requests with status 'pending' or 'rejected' */
+    /* being deleted old requests with status 'rejected' */
     try{
       await Models.SalesOrderRequest.destroy({
         where: {
           user_id: req.body.user_id,
           employee_id: req.body.employee_id,
           customer_id: req.body.customer_id,
-          $or:[ { supervisor_status: 'pending'}, { supervisor_status: 'rejected' } ]
+          supervisor_status: 'rejected'
         }
       })
-
-      console.log('all the requests before are deleted')
+      console.log('all the rejected requests before this are deleted')
     }
     catch(err){
       console.log('Error at the time of deleting all the past requests ', err)
@@ -6519,691 +6648,419 @@ exports.sales_order_request_submit = async function(req, res) {
 
     // now everything is handled, go for successfull cart submission
 
-    Models.SalesOrderRequest.create(create_sales)
-    .then( async salesOrderRequest => {
-        console.log("Created successfully ============>", salesOrderRequest)
-				if (salesOrderRequest.id) {
-          console.log("q step 1 sales order request id", salesOrderRequest.id);
-					let request_id = salesOrderRequest.id;
-					var sales_order_arr_quantity = "true";
-					var timeline_content_type =
-						req.body.request_type == "invoice"
-							? "invoice_order"
-							: req.body.request_type == "return_invoice"
-							? "return_invoice_order"
-							: "sales_order";
+    /*
+      1. saved a record in sales_order_request
+      2. loop through the sales_order_arr (this means we go through each products of the cart)
+        1. if invoice 
+          1. stock checking
+          2. update stock (decrease)
+          3. Invoice Request Stock Items for each product of the cart
+          
+          4. saved a record in sales order request details
 
-          for (var i = 0; i < sales_order_arr.length; i++) {
-						console.log("q step 2");
-						if (
-							sales_order_arr[i].item_id &&
-							sales_order_arr[i].category_id &&
-							sales_order_arr[i].measurement_unit_id &&
-							sales_order_arr[i].quantity
-						) {
-							console.log("q step 3");
-							let create_sales_req = {};
-							sale_req_detail = sales_order_arr[i];
-							create_sales_req.user_id = req.body.user_id;
-							create_sales_req.employee_id = req.body.employee_id;
-							create_sales_req.customer_id = req.body.customer_id;
-							create_sales_req.store_id = req.body.store_id;
-							create_sales_req.sales_manager_id = req.body.sales_manager_id;
-							create_sales_req.item_id = sales_order_arr[i].item_id;
-							create_sales_req.category_id = sales_order_arr[i].category_id;
-							create_sales_req.sales_order_request_id = request_id;
-							create_sales_req.measurement_unit_id =
-								sales_order_arr[i].measurement_unit_id;
-							create_sales_req.quantity = sales_order_arr[i].quantity;
-							create_sales_req.base_price_per_unit =
-								sales_order_arr[i].base_price_per_unit;
-							create_sales_req.total_price = sales_order_arr[i].total_price;
-							create_sales_req.total_price_before_tax =
-								sales_order_arr[i].total_price_before_tax;
-							create_sales_req.total_tax = sales_order_arr[i].total_tax;
-							create_sales_req.tax_type = sales_order_arr[i].tax_type;
+          5. promotions data added (if exists)
+          6. sales order cart details deleted
+          7. sales order cart promotion deleted
 
-							if (
-								sales_order_arr[i].total_price_with_tax != null &&
-								sales_order_arr[i].total_price_with_tax != ""
-							) {
-								create_sales_req.total_price_with_tax =
-									sales_order_arr[i].total_price_with_tax;
-							}
+          8. adding in the time line at the last 
+          9. sending push notification
+          10. sending sales_order_request_id
+    */
+    try{
+      const salesOrderRequest = await Models.SalesOrderRequest.create(create_sales)
+      
+      console.log("Created successfully =====================================>", salesOrderRequest)
 
-							if (
-								sales_order_arr[i].bonus != null &&
-								sales_order_arr[i].bonus != ""
-							) {
-								create_sales_req.bonus = sales_order_arr[i].bonus;
-							}
+      if( !isAllValid(salesOrderRequest.id)) return res.end( JSON.stringify({ response: 0, message: Messages["en"].ERROR_CREATE }))
+    
+      console.log("q step 1 sales order request id", salesOrderRequest.id);
+      let request_id = salesOrderRequest.id;
+      let sales_order_arr_quantity = "true";
+      let timeline_content_type = req.body.request_type == "invoice" 
+        ? "invoice_order" : req.body.request_type == "return_invoice" ? "return_invoice_order" : "sales_order";
 
-							console.log("prom length====================", sale_req_detail.sales_order_promotions_arr);
+      for (let i = 0; i < sales_order_arr.length; i++) {
+        console.log("q step 2");
+        if( sales_order_arr[i].item_id && sales_order_arr[i].category_id && sales_order_arr[i].measurement_unit_id && sales_order_arr[i].quantity ) {
+          console.log("q step 3");
+          let create_sales_req = {};
+          
+          sale_req_detail = sales_order_arr[i];
+          
+          create_sales_req.user_id = req.body.user_id;
+          create_sales_req.employee_id = req.body.employee_id;
+          create_sales_req.customer_id = req.body.customer_id;
+          create_sales_req.store_id = req.body.store_id;
+          create_sales_req.sales_manager_id = req.body.sales_manager_id;
+          create_sales_req.item_id = sales_order_arr[i].item_id;
+          create_sales_req.category_id = sales_order_arr[i].category_id;
+          create_sales_req.sales_order_request_id = request_id;
+          create_sales_req.measurement_unit_id = sales_order_arr[i].measurement_unit_id;
+          create_sales_req.quantity = sales_order_arr[i].quantity;
+          create_sales_req.base_price_per_unit = sales_order_arr[i].base_price_per_unit;
+          create_sales_req.total_price = sales_order_arr[i].total_price;
+          create_sales_req.total_price_before_tax = sales_order_arr[i].total_price_before_tax;
+          create_sales_req.total_tax = sales_order_arr[i].total_tax;
+          create_sales_req.tax_type = sales_order_arr[i].tax_type;
 
-							if (req.body.request_type == "invoice" && sales_order_arr[i].quantity != 0 ) {
-								Models.StockItems.findOne({
-									where: {
-										user_id: req.body.user_id,
-										store_id: req.body.store_id,
-										item_id: sales_order_arr[i].item_id,
-										measurement_unit_id: sales_order_arr[i].measurement_unit_id
-									}
-                })
-                .then( stockItemData => {
-                    const habib = sales_order_arr[i];
+          if ( isAllValid(sales_order_arr[i].total_price_with_tax, sales_order_arr[i].total_price_with_tax)) {
+            create_sales_req.total_price_with_tax = sales_order_arr[i].total_price_with_tax;
+          }
+
+          if ( isAllValid(sales_order_arr[i].bonus, sales_order_arr[i].bonus) ) create_sales_req.bonus = sales_order_arr[i].bonus
+          else create_sales_req.bonus = 0
+
+          console.log("prom length====================", sale_req_detail.sales_order_promotions_arr);
+
+          /*
+            1. if request type is invoice,
+              1. stock checking
+              2. update stock (decrease)
+              3. Invoice Request Stock Items for each product of the cart
+          */
+
+          if (req.body.request_type == "invoice" && sales_order_arr[i].quantity != 0 ) {
+            try{
+              const stockItemData = await Models.StockItems.findOne({
+                where: {
+                  user_id: req.body.user_id,
+                  store_id: req.body.store_id,
+                  item_id: sales_order_arr[i].item_id,
+                  measurement_unit_id: sales_order_arr[i].measurement_unit_id
+                }
+              })
+              const habib = sales_order_arr[i];
+                  
+              if (stockItemData.quantity < sales_order_arr[i].quantity) {
+                console.log( "else sales order quantity ===================",stockItemData.quantity,sales_order_arr[i].quantity);
+                console.log("maximum quantity exceeded");
+                return res.end(JSON.stringify({ response: 2, message: Messages["en"].WRONG_DATA }));
+              }
+              console.log("if sales order quantity ===================", sales_order_arr[i]);
+              console.log("sales order arr with habib ==========>", habib)
+                  
+              const remain_quantity = stockItemData.quantity - sales_order_arr[i].quantity;
+            
+              const updatedStockItemQuantity = await Models.StockItems.update(
+                { quantity: remain_quantity },
+                {
+                  where: {
+                    user_id: req.body.user_id,
+                    store_id: req.body.store_id,
+                    item_id: sales_order_arr[i].item_id,
+                    measurement_unit_id: sales_order_arr[i].measurement_unit_id
+                  }
+                }
+              )
+              
+              console.log("stock item quantity updated ==================", sales_order_arr[i].quantity);
+
+              if(!sales_order_arr[i]) sales_order_arr[i] = habib
+    
+              await Models.SalesOrderInvoiceRequestStockItems.create({
+                sales_order_request_id: salesOrderRequest.id,
+                user_id: req.body.user_id,
+                store_id: req.body.store_id,
+                item_id: sales_order_arr[i].item_id,
+                measurement_unit_id: sales_order_arr[i].measurement_unit_id,
+                quantity: sales_order_arr[i].quantity
+              })
+              console.log("sales order invoice request stock items created ==================");
+            }
+            catch(err){
+              console.log( "error in stock item quantity update ==================");
+              console.log(" OR error in sales order invoice request stock items create ==================");
+              return res.end( JSON.stringify({ response: 0, message: Messages["en"].ERROR_FETCH }));
+            }
+          }
+
+          /*
+            1. creating a record in sales_order_request_detail table
+          */
+
+          try{
+            const requestData = await Models.SalesOrderRequestDetail.create( create_sales_req)
+
+            console.log("add requestData id --- ---- ---- --- -- - - - -", requestData.id);
+            if (sale_req_detail.sales_order_promotions_arr.length > 0) {
+
+              console.log("if promo data  -----------------------------",sale_req_detail.sales_order_promotions_arr);
+              for (let j = 0; j < sale_req_detail.sales_order_promotions_arr.length; j++) {
+                // promotions_data = "";
+                promotions_data = sale_req_detail.sales_order_promotions_arr;
+                console.log("promotions data ----------------------------",promotions_data);
+                
+                if(isAllValid(promotions_data[j].discount_percentage)) promotions_data[j].discount_percentage = promotions_data[j].discount_percentage;
+                else promotions_data[j].discount_percentage = 0;
+
+                if(isAllValid(promotions_data[j].discount_amount)) promotions_data[j].discount_amount = promotions_data[j].discount_amount;
+                else promotions_data[j].discount_amount = 0;
+
+                if(isAllValid(promotions_data[j].discount_type) ) promotions_data[j].discount_type = promotions_data[j].discount_type;
+                else promotions_data[j].discount_type = "NA";
+                
+                if (isAllValid( promotions_data[j].promotion_bonus_item_id)) promotions_data[j].promotion_bonus_item_id = promotions_data[j].promotion_bonus_item_id;
+                else promotions_data[j].promotion_bonus_item_id = null;
+                
+                if (isAllValid(promotions_data[j].promotion_bonus_quantity)) promotions_data[j].promotion_bonus_quantity = promotions_data[j].promotion_bonus_quantity;
+                else promotions_data[j].promotion_bonus_quantity = 0;
+                
+                if (isAllValid(promotions_data[j].promotion_type)) promotions_data[j].promotion_type = promotions_data[j].promotion_type;
+                else promotions_data[j].promotion_type = "NA";
+
+                if(isAllValid(promotions_data[j].measurement_unit_id)) promotions_data[j].measurement_unit_id = promotions_data[j].measurement_unit_id;
+                else promotions_data[j].measurement_unit_id = null;
+                
+
+                if(isAllValid(promotions_data[j].promotion_id)) promotions_data[j].promotion_id = promotions_data[j].promotion_id;
+                else promotions_data[j].promotion_id = null;
+
+                /*
+                  # so we made an invoice for the products given by salesman
+                    here we will make an invoice for the products of promotions
+                */
+
+                if( req.body.request_type == "invoice" && promotions_data[j].promotion_bonus_quantity != 0 ) {
+                  try{
+                    const stockItemData = await Models.StockItems.findOne({
+                      where: {
+                        user_id: req.body.user_id,
+                        store_id: req.body.store_id,
+                        item_id: promotions_data[j].promotion_bonus_item_id,
+                        measurement_unit_id: promotions_data[j].measurement_unit_id
+                      }
+                    })
+
+                    if ( stockItemData.quantity < promotions_data[j].promotion_bonus_quantity) {
+                      console.log("promotion maximum quantity exceeded");
+                      return res.end( JSON.stringify({ response: 2,message: Messages["en"].WRONG_DATA }));
+                    }
+
+                    const remain_quantity = stockItemData.quantity - promotions_data[j].promotion_bonus_quantity;
                     
-										if (stockItemData.quantity >= sales_order_arr[i].quantity) {
-                      console.log("if sales order quantity ===================", sales_order_arr[i]);
-                      console.log("sales order arr with habib ==========>", habib)
-                      
-											var remain_quantity = stockItemData.quantity - sales_order_arr[i].quantity;
-											Models.StockItems.update(
-												{
-													quantity: remain_quantity
-												},
-												{
-													where: {
-														user_id: req.body.user_id,
-														store_id: req.body.store_id,
-														item_id: sales_order_arr[i].item_id,
-														measurement_unit_id:
-															sales_order_arr[i].measurement_unit_id
-													}
-												}
-                      )
-                      .then( updatedStockItemQuantity => {
-                        if(!sales_order_arr[i]) sales_order_arr[i] = habib
-                          console.log("sales order arr with again habib ==========>", habib)
-                          
-                          console.log("Sales order arr ===============>", sales_order_arr[i])
-                          console.log("updatedStockItemQuantity ==========>", updatedStockItemQuantity[0])
-                          
-                          Models.SalesOrderInvoiceRequestStockItems.create({
-														sales_order_request_id: salesOrderRequest.id,
-														user_id: req.body.user_id,
-														store_id: req.body.store_id,
-														item_id: sales_order_arr[i].item_id,
-														measurement_unit_id:
-															sales_order_arr[i].measurement_unit_id,
-														quantity: sales_order_arr[i].quantity
-													}).then(
-														createdSalesOrderInvoiceRequestStockItems => {
-															console.log(
-																"error in sales order invoice request stock items create =================="
-															);
-														},
-														error => {
-															console.log(
-																"error in sales order invoice request stock items create =================="
-															);
-														}
-													);
-													console.log("stock item quantity updated ==================", sales_order_arr[i].quantity);
-												},
-												error => { 
-                          console.log( "error in stock item quantity update ==================");
-												}
-											);
-										} else {
-											console.log(
-												"else sales order quantity ===================",
-												stockItemData.quantity,
-												sales_order_arr[i].quantity
-											);
-											console.log("maximum quantity exceeded");
-											res.end(
-												JSON.stringify({
-													response: 2,
-													message: Messages["en"].WRONG_DATA
-												})
-											);
-										}
-									},
-									error => {
-										res.end(
-											JSON.stringify({
-												response: 0,
-												message: Messages["en"].ERROR_FETCH
-											})
-										);
-									}
-								);
-							}
+                    await Models.StockItems.update(
+                      { quantity: remain_quantity },
+                      {
+                        where: {
+                          user_id: req.body.user_id,
+                          store_id: req.body.store_id,
+                          item_id: promotions_data[j].promotion_bonus_item_id,
+                          measurement_unit_id: promotions_data[j].measurement_unit_id
+                        }
+                      }
+                    )
+                    console.log("promotion stock item quantity updated ==================",promotions_data[j].promotion_bonus_quantity);
+                    
+                    await Models.SalesOrderInvoiceRequestStockItems.create({
+                      sales_order_request_id: salesOrderRequest.id,
+                      user_id: req.body.user_id,
+                      store_id: req.body.store_id,
+                      item_id: sales_order_arr[i].item_id,
+                      measurement_unit_id: sales_order_arr[i].measurement_unit_id,
+                      quantity: promotions_data[j].promotion_bonus_quantity
+                    })
+                    console.log( "sales order invoice request stock items created ==================");
+                  
+                  }
+                  catch(err){
+                    console.log("error in promotion stock item quantity update ==================")
+                    console.log("or error in sales order invoice stock items created=============")
+                    res.end( JSON.stringify({ response: 0, message: Messages["en"].ERROR_FETCH }) )            
+                  }
+                }
+              }
 
-							await Models.SalesOrderRequestDetail.create(
-								create_sales_req
-							).then(
-								async requestData => {
-									console.log(
-										"add requestData id --- ---- ---- --- -- - - - -",
-										requestData.id
-									);
+              console.log("create promotion gggc >>>>>>>>>>>>>>>" + requestData.id);
+              
+              /*
+                1. promotions data added
+                2. sales order cart details deleted
+                3. sales order cart promotion deleted
+              */
 
-									if (sale_req_detail.sales_order_promotions_arr.length > 0) {
-										console.log(
-											"if promo data  -----------------------------",
-											sale_req_detail.sales_order_promotions_arr
-										);
-										for (
-											var j = 0;
-											j < sale_req_detail.sales_order_promotions_arr.length;
-											j++
-										) {
-											// promotions_data = "";
-											promotions_data =
-												sale_req_detail.sales_order_promotions_arr;
-											console.log(
-												"promotions data ----------------------------",
-												promotions_data
-											);
-											if (
-												promotions_data[j].discount_percentage != "" &&
-												promotions_data[j].discount_percentage != null
-											) {
-												promotions_data[j].discount_percentage =
-													promotions_data[j].discount_percentage;
-											} else {
-												promotions_data[j].discount_percentage = 0;
-											}
+              try{
+                const addedPromotionsData = await Models.SalesOrderRequestDetailPromotion.create({
+                  sales_order_request_detail_id: requestData.id,
+                  discount_type: promotions_data[j].discount_type,
+                  promotion_id: promotions_data[j].promotion_id,
+                  promotion_type: promotions_data[j].promotion_type,
+                  discount_type: promotions_data[j].discount_type,
+                  discount_amount: promotions_data[j].discount_amount,
+                  discount_percentage: promotions_data[j].discount_percentage,
+                  promotion_bonus_item_id: promotions_data[j].promotion_bonus_item_id,
+                  promotion_bonus_quantity: promotions_data[j].promotion_bonus_quantity,
+                  measurement_unit_id: promotions_data[j].measurement_unit_id
+                })
+                
+                const cartData = await Models.SalesOrderCartDetail.findAll({
+                  where: {
+                    user_id: req.body.user_id,
+                    employee_id: req.body.employee_id,
+                    customer_id: req.body.customer_id,
+                    item_id: requestData.item_id
+                  }
+                })
 
-											if (
-												promotions_data[j].discount_amount != "" &&
-												promotions_data[j].discount_amount != null
-											) {
-												promotions_data[j].discount_amount =
-													promotions_data[j].discount_amount;
-											} else {
-												promotions_data[j].discount_amount = 0;
-											}
+                console.log( "cart data ------------------", cartData);
+                
+                if (cartData == null) return res.end( JSON.stringify({ response: 1, message: Messages["en"].SUCCESS_INSERT }))
 
-											if (
-												promotions_data[j].discount_type != "" &&
-												promotions_data[j].discount_type != null
-											) {
-												promotions_data[j].discount_type =
-													promotions_data[j].discount_type;
-											} else {
-												promotions_data[j].discount_type = "NA";
-											}
+                for (var k = 0; k < cartData.length; k++) {
+                  cart_data = cartData[k];
+                  try{
+                    await Models.SalesOrderCartPromotion.destroy({
+                      where: {
+                        sales_order_cart_id: cart_data.id
+                      }
+                    })
+                    console.log("cart promotions deleted Successfully -----------------",destPromo);
+                    
+                    await Models.SalesOrderCartDetail.destroy({
+                      where: {
+                        user_id: req.body.user_id,
+                        employee_id: req.body.employee_id,
+                        customer_id: req.body.customer_id,
+                        item_id: requestData.item_id
+                        // id:cart_data.id,
+                      }
+                    })
+                    console.log("cart detail deleted Successfully -----------------",destCart);
+                  }
+                  catch(err){
+                    console.log("**!!!! error in destroy sales order cart promotion !!!!**",error);
+                    console.log("OR **!!!! error in destroy sales order cart detail !!!!**",error);
+                  }
+                }
+              }
+              catch(err){
+                console.log("added promotions err", error);
+                return res.end( JSON.stringify({ response: 0, message: Messages["en"].ERROR_CREATE }) );
+              }
+            }
+            else {
+              /*
+                1. cart data finding 
+                2. sales order cart promotion deleted for each product
+                3. sales order cart detail deleted for each product
+              */
 
-											if (
-												promotions_data[j].promotion_bonus_item_id != "" &&
-												promotions_data[j].promotion_bonus_item_id != null
-											) {
-												promotions_data[j].promotion_bonus_item_id =
-													promotions_data[j].promotion_bonus_item_id;
-											} else {
-												promotions_data[j].promotion_bonus_item_id = null;
-											}
+              try{
+                const cartData = await Models.SalesOrderCartDetail.findAll({
+                  where: {
+                    user_id: req.body.user_id,
+                    employee_id: req.body.employee_id,
+                    customer_id: req.body.customer_id,
+                    item_id: requestData.item_id
+                  }
+                })
 
-											if (
-												promotions_data[j].promotion_bonus_quantity != "" &&
-												promotions_data[j].promotion_bonus_quantity != null
-											) {
-												promotions_data[j].promotion_bonus_quantity =
-													promotions_data[j].promotion_bonus_quantity;
-											} else {
-												promotions_data[j].promotion_bonus_quantity = 0;
-											}
+                console.log("cart data ------------------", cartData);
+                if (cartData == null) return res.end( JSON.stringify({ response: 1, message: Messages["en"].SUCCESS_INSERT }))
+              
+                for (let k = 0; k < cartData.length; k++) {
+                  cart_data = cartData[k];
+                  try{
+                    const destPromo = await Models.SalesOrderCartPromotion.destroy({
+                      where: {
+                        sales_order_cart_id: cart_data.id
+                      }
+                    })
 
-											if (
-												promotions_data[j].promotion_type != "" &&
-												promotions_data[j].promotion_type != null
-											) {
-												promotions_data[j].promotion_type =
-													promotions_data[j].promotion_type;
-											} else {
-												promotions_data[j].promotion_type = "NA";
-											}
+                    const destCart = await Models.SalesOrderCartDetail.destroy({
+                      where: {
+                        user_id: req.body.user_id,
+                        employee_id: req.body.employee_id,
+                        customer_id: req.body.customer_id,
+                        item_id: requestData.item_id
+                        // id:cart_data.id,
+                      }
+                    })
+                    console.log("cart detail deleted Successfully -----------------", destCart);
+                  }
+                  catch(err){
+                    console.log('error in deleting cart promotion')
+                    console.log('Or error in deleting cart detail')
+                  }
+                }
+              }
+              catch(err){
+                return res.end( JSON.stringify({ response: 0, message: Messages["en"].ERROR_FETCH }) );
+              }
+            }
+          }
+          catch(err){
+            console.log( "********** error in sales order request detail add ************", err)
+            return res.end( JSON.stringify({ response: 0, message: Messages["en"].ERROR_CREATE }) )
+          }
+        }
+        else {
+          console.log("***** Warning: Wrong data or format *****");
+        }
 
-											if (
-												promotions_data[j].measurement_unit_id != "" &&
-												promotions_data[j].measurement_unit_id != null
-											) {
-												promotions_data[j].measurement_unit_id =
-													promotions_data[j].measurement_unit_id;
-											} else {
-												promotions_data[j].measurement_unit_id = null;
-											}
+        if( i == sales_order_arr.length - 1 ){
+          try{
+            const addTimeline = Models.Timelines.create({
+              content_id: salesOrderRequest.id,
+              content_type: timeline_content_type,
+              user_id: req.body.user_id,
+              employee_id: req.body.employee_id,
+              customer_id: req.body.customer_id,
+              battery_life: req.body.battery_life,
+              android_version: req.body.android_version,
+              app_version: req.body.app_version,
+              latitude: req.body.latitude,
+              longitude: req.body.longitude
+            })
+            
+            let notify_title = req.body.request_type == "invoice" ? "Invoice Request" : req.body.request_type == "return_invoice"
+              ? "Return Invoice Request" : "Sales Order Request";
+            let notify_desc = req.body.request_type == "invoice"
+              ? "You Have New Invoice Request" : req.body.request_type == "return_invoice"
+              ? "You Have New Return Invoice Request" : "You Have New Sales Order Request";
+            let gcm_req_type = req.body.request_type == "invoice" ? "invoice" : req.body.request_type == "return_invoice" ? "return_invoice" : "sales_order";
+            
+            let gcm_obj = {};
+            
+            (gcm_obj.req_type = gcm_req_type), (gcm_obj.action = "request");
+                // try{
+            if(isAllValid(salesOrderRequest.supervisor_id) ) {
+              console.log("supervisor_id ===================", salesOrderRequest.supervisor_id);
+                  
+              try{
+                const gcmDev = await Models.GcmDevices.findOne({
+                  where: {
+                    employee_id: salesOrderRequest.supervisor_id
+                  }
+                })
+                
+                console.log("supervisor_id sending notify", gcmDev);
+                if (gcmDev != null && gcmDev.device_token != null) {
+                  console.log("push notification function ======================");  
+                  _sendPushNotificationAndroid( gcmDev.device_token, notify_title, notify_desc, gcm_obj )
+                } 
+                else console.log("data is null in gcmDev supervisor");
 
-											if (
-												promotions_data[j].promotion_id != "" &&
-												promotions_data[j].promotion_id != null
-											) {
-												promotions_data[j].promotion_id =
-													promotions_data[j].promotion_id;
-											} else {
-												promotions_data[j].promotion_id = null;
-											}
-
-											if (
-												req.body.request_type == "invoice" &&
-												promotions_data[j].promotion_bonus_quantity != 0
-											) {
-												await Models.StockItems.findOne({
-													where: {
-														user_id: req.body.user_id,
-														store_id: req.body.store_id,
-														item_id: promotions_data[j].promotion_bonus_item_id,
-														measurement_unit_id:
-															promotions_data[j].measurement_unit_id
-													}
-												}).then(
-													async stockItemData => {
-														if (
-															stockItemData.quantity >=
-															promotions_data[j].promotion_bonus_quantity
-														) {
-															var remain_quantity =
-																stockItemData.quantity -
-																promotions_data[j].promotion_bonus_quantity;
-															await Models.StockItems.update(
-																{
-																	quantity: remain_quantity
-																},
-																{
-																	where: {
-																		user_id: req.body.user_id,
-																		store_id: req.body.store_id,
-																		item_id:
-																			promotions_data[j]
-																				.promotion_bonus_item_id,
-																		measurement_unit_id:
-																			promotions_data[j].measurement_unit_id
-																	}
-																}
-															).then(
-																async updatedStockItemQuantity => {
-																	Models.SalesOrderInvoiceRequestStockItems.create(
-																		{
-																			sales_order_request_id:
-																				salesOrderRequest.id,
-																			user_id: req.body.user_id,
-																			store_id: req.body.store_id,
-																			item_id: sales_order_arr[i].item_id,
-																			measurement_unit_id:
-																				sales_order_arr[i].measurement_unit_id,
-																			quantity:
-																				promotions_data[j]
-																					.promotion_bonus_quantity
-																		}
-																	).then(
-																		createdSalesOrderInvoiceRequestStockItems => {
-																			console.log(
-																				"error in sales order invoice request stock items create =================="
-																			);
-																		},
-																		error => {
-																			console.log(
-																				"error in sales order invoice request stock items create =================="
-																			);
-																		}
-																	);
-																	console.log(
-																		"promotion stock item quantity updated ==================",
-																		promotions_data[j].promotion_bonus_quantity
-																	);
-																},
-																error => {
-																	console.log(
-																		"error in promotion stock item quantity update =================="
-																	);
-																}
-															);
-														} else {
-															console.log(
-																"promotion maximum quantity exceeded"
-															);
-															res.end(
-																JSON.stringify({
-																	response: 2,
-																	message: Messages["en"].WRONG_DATA
-																})
-															);
-														}
-													},
-													error => {
-														res.end(
-															JSON.stringify({
-																response: 0,
-																message: Messages["en"].ERROR_FETCH
-															})
-														);
-													}
-												);
-											}
-
-											console.log(
-												"create promotion gggc >>>>>>>>>>>>>>>" + requestData.id
-											);
-											await Models.SalesOrderRequestDetailPromotion.create({
-												sales_order_request_detail_id: requestData.id,
-												discount_type: promotions_data[j].discount_type,
-												promotion_id: promotions_data[j].promotion_id,
-												promotion_type: promotions_data[j].promotion_type,
-												discount_type: promotions_data[j].discount_type,
-												discount_amount: promotions_data[j].discount_amount,
-												discount_percentage:
-													promotions_data[j].discount_percentage,
-												promotion_bonus_item_id:
-													promotions_data[j].promotion_bonus_item_id,
-												promotion_bonus_quantity:
-													promotions_data[j].promotion_bonus_quantity,
-												measurement_unit_id:
-													promotions_data[j].measurement_unit_id
-											}).then(
-												async addedPromotionsData => {
-													Models.SalesOrderCartDetail.findAll({
-														where: {
-															user_id: req.body.user_id,
-															employee_id: req.body.employee_id,
-															customer_id: req.body.customer_id,
-															item_id: requestData.item_id
-														}
-													}).then(
-														cartData => {
-															console.log(
-																"cart data ------------------",
-																cartData
-                              );
-                              console.log('but ekhane kmne ashe =================>')
-															if (cartData != null) {
-                                console.log("ekhane ashse ================>")
-																for (var k = 0; k < cartData.length; k++) {
-																	cart_data = cartData[k];
-																	Models.SalesOrderCartPromotion.destroy({
-																		where: {
-																			sales_order_cart_id: cart_data.id
-																		}
-																	}).then(
-																		destPromo => {
-																			console.log(
-																				"cart promotions deleted Successfully -----------------",
-																				destPromo
-																			);
-																			Models.SalesOrderCartDetail.destroy({
-																				where: {
-																					user_id: req.body.user_id,
-																					employee_id: req.body.employee_id,
-																					customer_id: req.body.customer_id,
-																					item_id: requestData.item_id
-																					// id:cart_data.id,
-																				}
-																			}).then(
-																				destCart => {
-																					console.log(
-																						"cart detail deleted Successfully -----------------",
-																						destCart
-																					);
-																				},
-																				err => {
-																					console.log(
-																						"**!!!! error in destroy sales order request detail !!!!**",
-																						error
-																					);
-																				}
-																			);
-																		},
-																		err => {
-																			console.log(
-																				"**!!!! error in destroy sales order request detail !!!!**",
-																				error
-																			);
-																		}
-																	);
-																}
-															} else {
-																res.end(
-																	JSON.stringify({
-																		response: 1,
-																		message: Messages["en"].SUCCESS_INSERT
-																	})
-																);
-															}
-														},
-														error => {
-															res.end(
-																JSON.stringify({
-																	response: 0,
-																	message: Messages["en"].ERROR_FETCH
-																})
-															);
-														}
-													);
-													// console.log('added promotions >>>>>>>>>>>>');
-													// res.end(JSON.stringify({
-													//                 response: 1,
-													//                 message: Messages['en'].SUCCESS_INSERT,
-													//             }));
-												},
-												error => {
-													console.log("added promotions err", error);
-													res.end(
-														JSON.stringify({
-															response: 0,
-															message: Messages["en"].ERROR_CREATE
-														})
-													);
-												}
-											);
-										}
-									} else {
-										Models.SalesOrderCartDetail.findAll({
-											where: {
-												user_id: req.body.user_id,
-												employee_id: req.body.employee_id,
-												customer_id: req.body.customer_id,
-												item_id: requestData.item_id
-											}
-										}).then(
-											cartData => {
-                        console.log('dekhi ekhane ashe ki na')
-												console.log("cart data ------------------", cartData);
-												if (cartData != null) {
-													for (var k = 0; k < cartData.length; k++) {
-														cart_data = cartData[k];
-														Models.SalesOrderCartPromotion.destroy({
-															where: {
-																sales_order_cart_id: cart_data.id
-															}
-														}).then( destPromo => {
-                                console.log("request data =====> ",requestData.item_id)
-																console.log(
-																	"cart promotions deleted Successfully -----------------",
-																	destPromo
-                                );
-                                
-																Models.SalesOrderCartDetail.destroy({
-																	where: {
-																		user_id: req.body.user_id,
-																		employee_id: req.body.employee_id,
-																		customer_id: req.body.customer_id,
-																		item_id: requestData.item_id
-																		// id:cart_data.id,
-																	}
-																}).then(
-																	destCart => {
-																		console.log(
-																			"cart detail deleted Successfully -----------------",
-																			destCart
-																		);
-																	},
-																	err => {
-																		console.log(
-																			"**!!!! error in destroy sales order request detail !!!!**",
-																			error
-																		);
-																	}
-																);
-															},
-															err => {
-																console.log(
-																	"**!!!! error in destroy sales order request detail !!!!**",
-																	error
-																);
-															}
-														);
-													}
-												} else {
-													res.end(
-														JSON.stringify({
-															response: 1,
-															message: Messages["en"].SUCCESS_INSERT
-														})
-													);
-												}
-											},
-											error => {
-												res.end(
-													JSON.stringify({
-														response: 0,
-														message: Messages["en"].ERROR_FETCH
-													})
-												);
-											}
-										);
-									}
-								},
-								error => {
-									console.log(
-										"********** error in sales order request detail add ************",
-										error
-									);
-									res.end(
-										JSON.stringify({
-											response: 0,
-											message: Messages["en"].ERROR_CREATE
-										})
-									);
-								}
-							);
-						} else {
-							console.log("***** Warning: Wrong data or format *****");
-						}
-
-						if (sales_order_arr.length - 1 == i) {
-							Models.Timelines.create({
-								content_id: salesOrderRequest.id,
-								content_type: timeline_content_type,
-								user_id: req.body.user_id,
-								employee_id: req.body.employee_id,
-								customer_id: req.body.customer_id,
-								battery_life: req.body.battery_life,
-								android_version: req.body.android_version,
-								app_version: req.body.app_version,
-								latitude: req.body.latitude,
-								longitude: req.body.longitude
-							}).then(
-								addTimeline => {
-									let notify_title =
-										req.body.request_type == "invoice" ? "Invoice Request" : req.body.request_type == "return_invoice"
-											? "Return Invoice Request"
-											: "Sales Order Request";
-									let notify_desc =
-										req.body.request_type == "invoice"
-											? "You Have New Invoice Request"
-											: req.body.request_type == "return_invoice"
-											? "You Have New Return Invoice Request"
-											: "You Have New Sales Order Request";
-									let gcm_req_type =
-										req.body.request_type == "invoice"
-											? "invoice"
-											: req.body.request_type == "return_invoice"
-											? "return_invoice"
-											: "sales_order";
-									let gcm_obj = {};
-									(gcm_obj.req_type = gcm_req_type),
-										(gcm_obj.action = "request");
-									// try{
-									if (
-										salesOrderRequest.supervisor_id != null &&
-										salesOrderRequest.supervisor_id != ""
-									) {
-										console.log(
-											"supervisor_id ===================",
-											salesOrderRequest.supervisor_id
-										);
-										Models.GcmDevices.findOne({
-											where: {
-												employee_id: salesOrderRequest.supervisor_id
-											}
-										}).then(
-											gcmDev => {
-												console.log("supervisor_id sending notify", gcmDev);
-												if (gcmDev != null && gcmDev.device_token != null) {
-													console.log(
-														"push notification function ======================"
-													);
-													_sendPushNotificationAndroid(
-														gcmDev.device_token,
-														notify_title,
-														notify_desc,
-														gcm_obj
-													);
-												} else {
-													console.log("data is null in gcmDev supervisor");
-												}
-
-												console.log(
-													"sales order finish herehuhu =======================",
-													1
-												);
-												res.end(
-													JSON.stringify({
-														response: 1,
-														message: Messages["en"].SUCCESS_INSERT,
-														request_id: salesOrderRequest.id
-													})
-												);
-											},
-											error => {
-												console.log("error in sending notification");
-											}
-										);
-									}
-									console.log("invoice added in timeline =============");
-								},
-								error => {
-									console.log(
-										"error while adding invoice in timeline ============="
-									);
-									console.log("error in add timeline", error);
-								}
-							);
-
-							// console.log("sales order finish herehuhu =======================",1);
-							// res.end(JSON.stringify({
-							//                         response: 1,
-							//                         message: Messages['en'].SUCCESS_INSERT
-							//                     }));
-						}
-					}
-				} else {
-					res.end(
-						JSON.stringify({
-							response: 0,
-							message: Messages["en"].ERROR_CREATE
-						})
-					);
-				}
-			},
-			err => {
-				res.end(
-					JSON.stringify({
-						response: 0,
-						message: Messages["en"].ERROR_CREATE
-					})
-				);
-			}
-		);
-	} else {
-		res.end(
-			JSON.stringify({
-				response: 2,
-				message: Messages["en"].WRONG_DATA
-			})
-		);
-	}
+                console.log("sales order finish herehuhu =======================", 1);
+                return res.end( JSON.stringify({ response: 1, message: Messages["en"].SUCCESS_INSERT, request_id: salesOrderRequest.id }) );
+              }
+              catch(err){
+                console.log("error in sending notification");
+              }
+            }
+            console.log("invoice added in timeline =============");
+          }
+          catch(err){
+            console.log( "error while adding invoice in timeline =============" );
+            console.log("error in add timeline", error);
+          }
+        }
+      }
+    } 
+    catch(err){
+      return res.end( JSON.stringify({ response: 0, message: Messages["en"].ERROR_CREATE }) );
+    }
+  }
+  else res.end( JSON.stringify({ response: 2, message: Messages["en"].WRONG_DATA }) );
 };
 
 exports.sales_order_cart_remove_item = function(req, res) {
