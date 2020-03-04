@@ -6314,10 +6314,11 @@ exports.exceed_limit_request_change_status_supervisor = async function(req,res){
   console.log("input =============> ", req.body)
   if(isAllValid(req.body.cart_id, req.body.status)){
     try{
-      const data = await Models.SalesOrderRequest.update({ supervisor_status: req.body.status}, { 
-        where: { id: req.body.id } 
+      const data = await Models.SalesOrderRequest.update({ supervisor_status: req.body.status}, 
+      { 
+        where: { id: req.body.cart_id } 
       })
-      return res.end(JSON.stringify({ response: 1, message: 'You accepted the request', result: data }))
+      return res.end(JSON.stringify({ response: 1, message: Messages['en'].SUCCESS_UPDATE, result: data }))
     }
     catch(err){
       console.log(err)
@@ -6555,8 +6556,9 @@ exports.sales_order_request_submit = async function(req, res) {
             id: req.body.cart_id
           }
         })
-        if(oldCart.supervisor_status == 'pending') return res.end( JSON.stringify({ response: 0, message: `You can not order. Your request is, ${oldCart.supervisor_status}` }) )
-        if( oldCart.supervisor_status == 'rejected'){
+        console.log('old cart==============================>', oldCart)
+        if(isAllValid(oldCart) && oldCart.supervisor_status == 'pending') return res.end( JSON.stringify({ response: 0, message: `You can not order. Your request is, ${oldCart.supervisor_status}` }) )
+        if(isAllValid(oldCart) && oldCart.supervisor_status == 'rejected'){
           const destCart = await Models.SalesOrderRequest.destroy({
             where: {
               id: req.body.cart_id
@@ -6894,7 +6896,7 @@ exports.sales_order_request_submit = async function(req, res) {
                     res.end( JSON.stringify({ response: 0, message: Messages["en"].ERROR_FETCH }) )            
                   }
                 }
-              }
+              // }
 
               console.log("create promotion gggc >>>>>>>>>>>>>>>" + requestData.id);
               
@@ -6904,63 +6906,64 @@ exports.sales_order_request_submit = async function(req, res) {
                 3. sales order cart promotion deleted
               */
 
-              try{
-                const addedPromotionsData = await Models.SalesOrderRequestDetailPromotion.create({
-                  sales_order_request_detail_id: requestData.id,
-                  discount_type: promotions_data[j].discount_type,
-                  promotion_id: promotions_data[j].promotion_id,
-                  promotion_type: promotions_data[j].promotion_type,
-                  discount_type: promotions_data[j].discount_type,
-                  discount_amount: promotions_data[j].discount_amount,
-                  discount_percentage: promotions_data[j].discount_percentage,
-                  promotion_bonus_item_id: promotions_data[j].promotion_bonus_item_id,
-                  promotion_bonus_quantity: promotions_data[j].promotion_bonus_quantity,
-                  measurement_unit_id: promotions_data[j].measurement_unit_id
-                })
-                
-                const cartData = await Models.SalesOrderCartDetail.findAll({
-                  where: {
-                    user_id: req.body.user_id,
-                    employee_id: req.body.employee_id,
-                    customer_id: req.body.customer_id,
-                    item_id: requestData.item_id
-                  }
-                })
+                try{
+                  const addedPromotionsData = await Models.SalesOrderRequestDetailPromotion.create({
+                    sales_order_request_detail_id: requestData.id,
+                    discount_type: promotions_data[j].discount_type,
+                    promotion_id: promotions_data[j].promotion_id,
+                    promotion_type: promotions_data[j].promotion_type,
+                    discount_type: promotions_data[j].discount_type,
+                    discount_amount: promotions_data[j].discount_amount,
+                    discount_percentage: promotions_data[j].discount_percentage,
+                    promotion_bonus_item_id: promotions_data[j].promotion_bonus_item_id,
+                    promotion_bonus_quantity: promotions_data[j].promotion_bonus_quantity,
+                    measurement_unit_id: promotions_data[j].measurement_unit_id
+                  })
+                  
+                  const cartData = await Models.SalesOrderCartDetail.findAll({
+                    where: {
+                      user_id: req.body.user_id,
+                      employee_id: req.body.employee_id,
+                      customer_id: req.body.customer_id,
+                      item_id: requestData.item_id
+                    }
+                  })
 
-                console.log( "cart data ------------------", cartData);
-                
-                if (cartData == null) return res.end( JSON.stringify({ response: 1, message: Messages["en"].SUCCESS_INSERT }))
+                  console.log( "cart data ------------------", cartData);
+                  
+                  if (cartData == null) return res.end( JSON.stringify({ response: 1, message: Messages["en"].SUCCESS_INSERT }))
 
-                for (var k = 0; k < cartData.length; k++) {
-                  cart_data = cartData[k];
-                  try{
-                    await Models.SalesOrderCartPromotion.destroy({
-                      where: {
-                        sales_order_cart_id: cart_data.id
-                      }
-                    })
-                    console.log("cart promotions deleted Successfully -----------------",destPromo);
-                    
-                    await Models.SalesOrderCartDetail.destroy({
-                      where: {
-                        user_id: req.body.user_id,
-                        employee_id: req.body.employee_id,
-                        customer_id: req.body.customer_id,
-                        item_id: requestData.item_id
-                        // id:cart_data.id,
-                      }
-                    })
-                    console.log("cart detail deleted Successfully -----------------",destCart);
-                  }
-                  catch(err){
-                    console.log("**!!!! error in destroy sales order cart promotion !!!!**",error);
-                    console.log("OR **!!!! error in destroy sales order cart detail !!!!**",error);
+                  for (let k = 0; k < cartData.length; k++) {
+                    cart_data = cartData[k];
+                    try{
+                      const destPromo = await Models.SalesOrderCartPromotion.destroy({
+                        where: {
+                          sales_order_cart_id: cart_data.id
+                        }
+                      })
+                      console.log("cart promotions deleted Successfully -----------------",destPromo);
+                      
+                      const destCart = await Models.SalesOrderCartDetail.destroy({
+                        where: {
+                          user_id: req.body.user_id,
+                          employee_id: req.body.employee_id,
+                          customer_id: req.body.customer_id,
+                          item_id: requestData.item_id
+                          // id:cart_data.id,
+                        }
+                      })
+                      console.log("cart detail deleted Successfully -----------------",destCart);
+                    }
+                    catch(err){
+                      console.log("**!!!! error in destroy sales order cart promotion !!!!**",err);
+                      console.log("OR **!!!! error in destroy sales order cart detail !!!!**",err);
+                    }
                   }
                 }
-              }
-              catch(err){
-                console.log("added promotions err", error);
-                return res.end( JSON.stringify({ response: 0, message: Messages["en"].ERROR_CREATE }) );
+                catch(err){
+                  console.log("added promotions err", err);
+                  return res.end( JSON.stringify({ response: 0, message: Messages["en"].ERROR_CREATE }) );
+                }
               }
             }
             else {
@@ -7077,7 +7080,7 @@ exports.sales_order_request_submit = async function(req, res) {
           }
           catch(err){
             console.log( "error while adding invoice in timeline =============" );
-            console.log("error in add timeline", error);
+            console.log("error in add timeline", err);
           }
         }
       }
