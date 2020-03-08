@@ -1,11 +1,12 @@
+const winston = require('winston')
 var express = require("express");
 var app = express();
 var Sequelize = require("sequelize");
 var env = "dev";
 const Op = Sequelize.Op;
 
-const schema = require('../utils/schema')
-const { isAllValid } = require('../utils/validation')
+const schema = require("../utils/schema");
+const { isAllValid } = require("../utils/validation");
 
 var config = require("../config.json")[env];
 var password = config.password ? config.password : null;
@@ -4549,41 +4550,54 @@ exports.get_unload_request_items_list = function(req, res) {
 
 exports.add_items_to_sales_cart = function(req, res) {
 	// req.body = {
-  //       "user_id": "7",
-  //       "employee_id": "13",
-  //       "customer_id": "88",
-  //       "item_id": "1",
-  //       "quantity": "30",
-  //       "unit_id": "23",
-  //       "total_price": 1575,
-  //       "total_price_before_tax": 1500,
-  //       "total_tax": 75,
-  //       "base_price_per_unit": 50,
-  //       "tax_type": "percentage",
-  //       "total_price_with_tax": 1575,
-  //       "cart_type": "invoice" or "return_invoice" or "order"
-  //       "promotions_data": [{
-  //       "promotion_id": "76",
-  //       "promotion_type": "range",
-  //       "promotion_bonus_item_id": "4",
-  //       "promotion_bonus_quantity": "40"
-  //       }, {
-  //       "promotion_id": "62",
-  //       "promotion_type": "range",
-  //       "promotion_bonus_item_id": "4",
-  //       "promotion_bonus_quantity": "30"
-  //       }, {
-  //       "promotion_id": "34",
-  //       "promotion_type": "package",
-  //       "discount_type": "value",
-  //       "discount_amount": "20",
-  //       "discount_percentage": ""
-  //       }]
-  //   };
+	//       "user_id": "7",
+	//       "employee_id": "13",
+	//       "customer_id": "88",
+	//       "item_id": "1",
+	//       "quantity": "30",
+	//       "unit_id": "23",
+	//       "total_price": 1575,
+	//       "total_price_before_tax": 1500,
+	//       "total_tax": 75,
+	//       "base_price_per_unit": 50,
+	//       "tax_type": "percentage",
+	//       "total_price_with_tax": 1575,
+	//       "cart_type": "invoice" or "return_invoice" or "order"
+	//       "promotions_data": [{
+	//       "promotion_id": "76",
+	//       "promotion_type": "range",
+	//       "promotion_bonus_item_id": "4",
+	//       "promotion_bonus_quantity": "40"
+	//       }, {
+	//       "promotion_id": "62",
+	//       "promotion_type": "range",
+	//       "promotion_bonus_item_id": "4",
+	//       "promotion_bonus_quantity": "30"
+	//       }, {
+	//       "promotion_id": "34",
+	//       "promotion_type": "package",
+	//       "discount_type": "value",
+	//       "discount_amount": "20",
+	//       "discount_percentage": ""
+	//       }]
+	//   };
 
 	console.log("add items to sales cart data =====================", req.body);
-    if ( isAllValid(req.body.user_id, req.body.item_id, req.body.employee_id, req.body.customer_id, req.body.unit_id, req.body.quantity,
-        req.body.total_price, req.body.total_price_before_tax, req.body.tax_type, req.body.base_price_per_unit, req.body.cart_type ) ){
+	if (
+		isAllValid(
+			req.body.user_id,
+			req.body.item_id,
+			req.body.employee_id,
+			req.body.customer_id,
+			req.body.unit_id,
+			req.body.quantity,
+			req.body.total_price,
+			req.body.total_price_before_tax,
+			req.body.tax_type,
+			req.body.base_price_per_unit,
+			req.body.cart_type
+		)
+	) {
 		console.log(
 			"input data >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>",
 			req.body
@@ -4593,10 +4607,11 @@ exports.add_items_to_sales_cart = function(req, res) {
 				user_id: req.body.user_id,
 				employee_id: req.body.employee_id,
 				customer_id: req.body.customer_id,
-                item_id: req.body.item_id,
-                cart_type: req.body.cart_type
+				item_id: req.body.item_id,
+				cart_type: req.body.cart_type
 			}
-		}).then( checkItem => {
+		}).then(
+			checkItem => {
 				console.log("checkItem >>>>>>>>>>>>>>>>>>>>");
 				if (checkItem == null) {
 					console.log("checkItem if >>>>>>>>>>>>>>>>>>>>>>>>>");
@@ -4626,22 +4641,28 @@ exports.add_items_to_sales_cart = function(req, res) {
 					create_sales.total_price_before_tax = req.body.total_price_before_tax;
 					create_sales.total_tax = req.body.total_tax;
 					create_sales.tax_type = req.body.tax_type;
-                    create_sales.base_price_per_unit = req.body.base_price_per_unit;
-                    create_sales.cart_type = req.body.cart_type
+					create_sales.base_price_per_unit = req.body.base_price_per_unit;
+					create_sales.cart_type = req.body.cart_type;
 					console.log("befor add >>>>>>>>>>>>>>>>>>>>");
-                    Models.SalesOrderCartDetail.create(create_sales)
-                        .then( addedItem => {
+					Models.SalesOrderCartDetail.create(create_sales).then(
+						addedItem => {
 							if (addedItem) {
 								console.log(" added item >>>>>>>>>>>>>>>>" + addedItem.id);
-                                if(req.body.cart_type=='return_invoice') return res.end( JSON.stringify({ response: 1, message: Messages['en'].SUCCESS_INSERT }) )
+								if (req.body.cart_type == "return_invoice")
+									return res.end(
+										JSON.stringify({
+											response: 1,
+											message: Messages["en"].SUCCESS_INSERT
+										})
+									);
 
-                                // items already added in the cart =>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-                                console.log("if added item >>>>>>>>>>>>>>>>");
+								// items already added in the cart =>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+								console.log("if added item >>>>>>>>>>>>>>>>");
 								console.log(
 									"promotions data array >>>>>>>>>>>>>>>>",
 									req.body.promotions_data
-                                );
-                                
+								);
+
 								var promotions_data = [];
 								if (!Array.isArray(req.body.promotions_data)) {
 									promotions_data = [req.body.promotions_data];
@@ -4828,11 +4849,16 @@ exports.add_items_to_sales_cart = function(req, res) {
 						}
 					}).then(
 						addedItem => {
-                            
 							if (addedItem) {
-                                console.log("item updated >>>>>>>>>>>>>>>>>>>>>>>>>>>");
-                                
-                                if(req.body.cart_type=='return_invoice') return res.end( JSON.stringify({ response: 1, message: Messages['en'].SUCCESS_INSERT }) )
+								console.log("item updated >>>>>>>>>>>>>>>>>>>>>>>>>>>");
+
+								if (req.body.cart_type == "return_invoice")
+									return res.end(
+										JSON.stringify({
+											response: 1,
+											message: Messages["en"].SUCCESS_INSERT
+										})
+									);
 
 								Models.SalesOrderCartPromotion.destroy({
 									where: {
@@ -5027,7 +5053,7 @@ exports.add_items_to_sales_cart = function(req, res) {
 			}
 		);
 	} else {
-        console.log('debug ============================>')
+		console.log("debug ============================>");
 		res.end(
 			JSON.stringify({
 				response: 2,
@@ -5061,19 +5087,18 @@ exports.add_items_to_sales_cart = function(req, res) {
 */
 
 exports.adjust_items_from_sales_cart = async function(req, res) {
+	// req.body = {
+	//   "user_id": "7",
+	//   "employee_id": "13",
+	//   "customer_id": "88",
+	//   "store_id": "25",
+	//   "item_id": "4",
+	//   "measurement_unit_id": "23",
+	//   "quantity": "30",
+	//   "bonus_qty": "2"
+	// }
 
-  // req.body = {
-  //   "user_id": "7", 
-  //   "employee_id": "13", 
-  //   "customer_id": "88", 
-  //   "store_id": "25", 
-  //   "item_id": "4", 
-  //   "measurement_unit_id": "23", 
-  //   "quantity": "30", 
-  //   "bonus_qty": "2"
-  // }
-
-  // req.body = {
+	// req.body = {
 	// 	"user_id": "7",
 	// 	"employee_id": "13",
 	// 	"store_id": "25",
@@ -5149,7 +5174,7 @@ exports.adjust_items_from_sales_cart = async function(req, res) {
 	// };
 
 	// req.body = {
-  // 	"user_id": "7",
+	// 	"user_id": "7",
 	// 	"employee_id": "40",
 	// 	"store_id": "29",
 	// 	"customer_id": "88",
@@ -5177,14 +5202,17 @@ exports.adjust_items_from_sales_cart = async function(req, res) {
 	// 		"base_price_per_unit": "30"
 	// 	}]
 	// };
-  
-	console.log( "adjust items from sales cart data =====================", req.body);
-  let { user_id, employee_id, customer_id, store_id, } = req.body
-	if ( isAllValid(user_id, employee_id, customer_id, store_id ) ) {
 
-    let sales_order_arr = [];
-    
-		if (!Array.isArray(req.body.sales_order_arr)) sales_order_arr = [req.body.sales_order_arr];
+	console.log(
+		"adjust items from sales cart data =====================",
+		req.body
+	);
+	let { user_id, employee_id, customer_id, store_id } = req.body;
+	if (isAllValid(user_id, employee_id, customer_id, store_id)) {
+		let sales_order_arr = [];
+
+		if (!Array.isArray(req.body.sales_order_arr))
+			sales_order_arr = [req.body.sales_order_arr];
 		else sales_order_arr = req.body.sales_order_arr;
 
 		let create_sales = {};
@@ -5197,267 +5225,389 @@ exports.adjust_items_from_sales_cart = async function(req, res) {
 		create_sales.supervisor_id = req.body.supervisor_id;
 		create_sales.no_of_items = sales_order_arr.length;
 
-		if ( req.body.level > 1 && (req.body.salesmanager_id == null || req.body.salesmanager_id == "") ) {
-			return res.end( JSON.stringify({ response: 2, message: Messages["en"].WRONG_DATA }));
-    } 
-    else if (req.body.level > 1) {
+		if (
+			req.body.level > 1 &&
+			(req.body.salesmanager_id == null || req.body.salesmanager_id == "")
+		) {
+			return res.end(
+				JSON.stringify({ response: 2, message: Messages["en"].WRONG_DATA })
+			);
+		} else if (req.body.level > 1) {
 			create_sales.salesmanager_id = req.body.salesmanager_id;
 			create_sales.salesmanager_status = "pending";
-    }
+		}
 
-    create_sales.supervisor_status = "accepted"
-		create_sales.total_price_without_tax_discount = req.body.total_price_without_tax_discount;
+		create_sales.supervisor_status = "accepted";
+		create_sales.total_price_without_tax_discount =
+			req.body.total_price_without_tax_discount;
 		create_sales.total_tax = req.body.total_tax;
 		create_sales.total_discount = req.body.total_discount;
 		create_sales.total_price = req.body.total_price;
 		create_sales.request_type =
-			req.body.request_type == "invoice" ? "invoice" : req.body.request_type == "return_invoice" ? "return_invoice" : "sales";
-        
-    
-    try{
-      const salesOrderRequest = await Models.SalesOrderRequest.create(create_sales)
-      
-      console.log("Created successfully =====================================>", salesOrderRequest)
+			req.body.request_type == "invoice"
+				? "invoice"
+				: req.body.request_type == "return_invoice"
+				? "return_invoice"
+				: "sales";
 
-      if( !isAllValid(salesOrderRequest.id)) return res.end( JSON.stringify({ response: 0, message: Messages["en"].ERROR_CREATE }))
-    
-      console.log("q step 1 sales order request id", salesOrderRequest.id);
-      let request_id = salesOrderRequest.id;
-      let sales_order_arr_quantity = "true";
-      let timeline_content_type = req.body.request_type == "invoice" 
-        ? "invoice_order" : req.body.request_type == "return_invoice" ? "return_invoice_order" : "sales_order";
+		try {
+			const salesOrderRequest = await Models.SalesOrderRequest.create(
+				create_sales
+			);
 
-      for ( let i = 0; i < sales_order_arr.length; i++) {
+			console.log(
+				"Created successfully =====================================>",
+				salesOrderRequest
+			);
 
-        if( sales_order_arr[i].item_id && sales_order_arr[i].category_id && sales_order_arr[i].measurement_unit_id && sales_order_arr[i].quantity ) {
-          console.log('Sales Order Arr [i] ==========>', sales_order_arr[i])
-          
-          const create_sales_req = {};
-          
-          create_sales_req.user_id = req.body.user_id;
-          create_sales_req.employee_id = req.body.employee_id;
-          create_sales_req.customer_id = req.body.customer_id;
-          create_sales_req.store_id = req.body.store_id;
-          create_sales_req.sales_manager_id = req.body.sales_manager_id;
-          create_sales_req.item_id = sales_order_arr[i].item_id;
-          create_sales_req.category_id = sales_order_arr[i].category_id;
-          create_sales_req.sales_order_request_id = request_id;
-          create_sales_req.measurement_unit_id = sales_order_arr[i].measurement_unit_id;
-          create_sales_req.quantity = sales_order_arr[i].quantity;
-          create_sales_req.base_price_per_unit = sales_order_arr[i].base_price_per_unit;
-          create_sales_req.total_price = sales_order_arr[i].total_price;
-          create_sales_req.total_price_before_tax = sales_order_arr[i].total_price_before_tax;
-          create_sales_req.total_tax = sales_order_arr[i].total_tax;
-          create_sales_req.tax_type = sales_order_arr[i].tax_type;
+			if (!isAllValid(salesOrderRequest.id))
+				return res.end(
+					JSON.stringify({ response: 0, message: Messages["en"].ERROR_CREATE })
+				);
 
-          if ( isAllValid(sales_order_arr[i].total_price_with_tax, sales_order_arr[i].total_price_with_tax)) {
-            create_sales_req.total_price_with_tax = sales_order_arr[i].total_price_with_tax;
-          }
+			console.log("q step 1 sales order request id", salesOrderRequest.id);
+			let request_id = salesOrderRequest.id;
+			let sales_order_arr_quantity = "true";
+			let timeline_content_type =
+				req.body.request_type == "invoice"
+					? "invoice_order"
+					: req.body.request_type == "return_invoice"
+					? "return_invoice_order"
+					: "sales_order";
 
-          if ( isAllValid(sales_order_arr[i].bonus, sales_order_arr[i].bonus) ) create_sales_req.bonus = sales_order_arr[i].bonus
-          else create_sales_req.bonus = 0
+			for (let i = 0; i < sales_order_arr.length; i++) {
+				if (
+					sales_order_arr[i].item_id &&
+					sales_order_arr[i].category_id &&
+					sales_order_arr[i].measurement_unit_id &&
+					sales_order_arr[i].quantity
+				) {
+					console.log("Sales Order Arr [i] ==========>", sales_order_arr[i]);
 
-        // =======================================================================================
-          try{
-            const requestData = await Models.SalesOrderRequestDetail.create( create_sales_req )
-            console.log("request data is created", requestData)
+					const create_sales_req = {};
 
-            const stockItemData = await Models.StockItems.findOne({
-              where: {
-                user_id: user_id,
-                store_id: store_id,
-                item_id: sales_order_arr[i].item_id,
-                measurement_unit_id: sales_order_arr[i].measurement_unit_id
-              }
-            })
+					create_sales_req.user_id = req.body.user_id;
+					create_sales_req.employee_id = req.body.employee_id;
+					create_sales_req.customer_id = req.body.customer_id;
+					create_sales_req.store_id = req.body.store_id;
+					create_sales_req.sales_manager_id = req.body.sales_manager_id;
+					create_sales_req.item_id = sales_order_arr[i].item_id;
+					create_sales_req.category_id = sales_order_arr[i].category_id;
+					create_sales_req.sales_order_request_id = request_id;
+					create_sales_req.measurement_unit_id =
+						sales_order_arr[i].measurement_unit_id;
+					create_sales_req.quantity = sales_order_arr[i].quantity;
+					create_sales_req.base_price_per_unit =
+						sales_order_arr[i].base_price_per_unit;
+					create_sales_req.total_price = sales_order_arr[i].total_price;
+					create_sales_req.total_price_before_tax =
+						sales_order_arr[i].total_price_before_tax;
+					create_sales_req.total_tax = sales_order_arr[i].total_tax;
+					create_sales_req.tax_type = sales_order_arr[i].tax_type;
 
-            console.log('Stock item data ===========> ', stockItemData)
+					if (
+						isAllValid(
+							sales_order_arr[i].total_price_with_tax,
+							sales_order_arr[i].total_price_with_tax
+						)
+					) {
+						create_sales_req.total_price_with_tax =
+							sales_order_arr[i].total_price_with_tax;
+					}
 
-            let stock_item_data_quantity = stockItemData.quantity
-            if( stockItemData.quantity == null) stock_item_data_quantity = 0;
+					if (isAllValid(sales_order_arr[i].bonus, sales_order_arr[i].bonus))
+						create_sales_req.bonus = sales_order_arr[i].bonus;
+					else create_sales_req.bonus = 0;
 
-            const present_quantity = ( parseInt(stock_item_data_quantity) + parseInt(sales_order_arr[i].quantity) ).toString();
-            
-            const updatedStockItemQuantity = await Models.StockItems.update({ quantity: present_quantity },
-              { 
-                where: {
-                  user_id: user_id,
-                  store_id: store_id,
-                  item_id: sales_order_arr[i].item_id,
-                  measurement_unit_id: sales_order_arr[i].measurement_unit_id
-                }
-            })
+					// =======================================================================================
+					try {
+						const requestData = await Models.SalesOrderRequestDetail.create(
+							create_sales_req
+						);
+						console.log("request data is created", requestData);
 
-            console.log('Updated Stock Item Quantity =============> ', updatedStockItemQuantity)
+						const stockItemData = await Models.StockItems.findOne({
+							where: {
+								user_id: user_id,
+								store_id: store_id,
+								item_id: sales_order_arr[i].item_id,
+								measurement_unit_id: sales_order_arr[i].measurement_unit_id
+							}
+						});
 
-            const destCart = await Models.SalesOrderCartDetail.destroy({
-              where: {
-                user_id: user_id,
-                employee_id: employee_id,
-                customer_id: customer_id,
-                item_id: sales_order_arr[i].item_id
-              }
-            })
+						console.log("Stock item data ===========> ", stockItemData);
 
-            console.log('Destroyed the cart from return invoice')
+						let stock_item_data_quantity = stockItemData.quantity;
+						if (stockItemData.quantity == null) stock_item_data_quantity = 0;
 
-            
-            if(i == sales_order_arr.length-1) {
-              if( i == sales_order_arr.length - 1 ){
-                try{
-                  const addTimeline = Models.Timelines.create({
-                    content_id: salesOrderRequest.id,
-                    content_type: timeline_content_type,
-                    user_id: req.body.user_id,
-                    employee_id: req.body.employee_id,
-                    customer_id: req.body.customer_id,
-                    battery_life: req.body.battery_life,
-                    android_version: req.body.android_version,
-                    app_version: req.body.app_version,
-                    latitude: req.body.latitude,
-                    longitude: req.body.longitude
-                  })
-                  
-                  let notify_title = req.body.request_type == "invoice" ? "Invoice Request" : req.body.request_type == "return_invoice"
-                    ? "Return Invoice Request" : "Sales Order Request";
-                  let notify_desc = req.body.request_type == "invoice"
-                    ? "You Have New Invoice Request" : req.body.request_type == "return_invoice"
-                    ? "You Have New Return Invoice Request" : "You Have New Sales Order Request";
-                  let gcm_req_type = req.body.request_type == "invoice" ? "invoice" : req.body.request_type == "return_invoice" ? "return_invoice" : "sales_order";
-                  
-                  let gcm_obj = {};
-                  
-                  (gcm_obj.req_type = gcm_req_type), (gcm_obj.action = "request");
-                      // try{
-                  if(isAllValid(salesOrderRequest.supervisor_id) ) {
-                    console.log("supervisor_id ===================", salesOrderRequest.supervisor_id);
-                        
-                    try{
-                      const gcmDev = await Models.GcmDevices.findOne({
-                        where: {
-                          employee_id: salesOrderRequest.supervisor_id
-                        }
-                      })
-                      
-                      console.log("supervisor_id sending notify", gcmDev);
-                      if (gcmDev != null && gcmDev.device_token != null) {
-                        console.log("push notification function ======================");  
-                        _sendPushNotificationAndroid( gcmDev.device_token, notify_title, notify_desc, gcm_obj )
-                      } 
-                      else console.log("data is null in gcmDev supervisor");
-      
-                      console.log("sales order finish herehuhu =======================", 1);
-                      return res.end( JSON.stringify({ response: 1, message: Messages["en"].SUCCESS_INSERT, request_id: salesOrderRequest.id }) );
-                    }
-                    catch(err){
-                      console.log("error in sending notification");
-                    }
-                  }
-                  console.log("invoice added in timeline =============");
-                }
-                catch(err){
-                  console.log( "error while adding invoice in timeline =============" );
-                  console.log("error in add timeline", error);
-                }
-                //return res.end( JSON.stringify({ response: 1, message: Messages["en"].SUCCESS_INSERT, request_id: salesOrderRequest.id }) );
-              }
-            }
-          }
-          catch(err){
-            return res.end( JSON.stringify({ response: 3, message: 'Error Occured' }) )
-          }
-        }
-        else return res.end(JSON.stringify({ response: 0, message: Messages['en'].WRONG_DATA }))
-      }
-    }
-    catch(err){
-      return res.end(JSON.stringify({ response: 0, message: Messages['en'].ERROR_CREATE }))
-    }
-  }
-  else res.end( JSON.stringify({ response: 2, message: Messages["en"].WRONG_DATA }) );
-}
+						const present_quantity = (
+							parseInt(stock_item_data_quantity) +
+							parseInt(sales_order_arr[i].quantity)
+						).toString();
 
+						const updatedStockItemQuantity = await Models.StockItems.update(
+							{ quantity: present_quantity },
+							{
+								where: {
+									user_id: user_id,
+									store_id: store_id,
+									item_id: sales_order_arr[i].item_id,
+									measurement_unit_id: sales_order_arr[i].measurement_unit_id
+								}
+							}
+						);
+
+						console.log(
+							"Updated Stock Item Quantity =============> ",
+							updatedStockItemQuantity
+						);
+
+						const destCart = await Models.SalesOrderCartDetail.destroy({
+							where: {
+								user_id: user_id,
+								employee_id: employee_id,
+								customer_id: customer_id,
+								item_id: sales_order_arr[i].item_id
+							}
+						});
+
+						console.log("Destroyed the cart from return invoice");
+
+						if (i == sales_order_arr.length - 1) {
+							if (i == sales_order_arr.length - 1) {
+								try {
+									const addTimeline = Models.Timelines.create({
+										content_id: salesOrderRequest.id,
+										content_type: timeline_content_type,
+										user_id: req.body.user_id,
+										employee_id: req.body.employee_id,
+										customer_id: req.body.customer_id,
+										battery_life: req.body.battery_life,
+										android_version: req.body.android_version,
+										app_version: req.body.app_version,
+										latitude: req.body.latitude,
+										longitude: req.body.longitude
+									});
+
+									let notify_title =
+										req.body.request_type == "invoice"
+											? "Invoice Request"
+											: req.body.request_type == "return_invoice"
+											? "Return Invoice Request"
+											: "Sales Order Request";
+									let notify_desc =
+										req.body.request_type == "invoice"
+											? "You Have New Invoice Request"
+											: req.body.request_type == "return_invoice"
+											? "You Have New Return Invoice Request"
+											: "You Have New Sales Order Request";
+									let gcm_req_type =
+										req.body.request_type == "invoice"
+											? "invoice"
+											: req.body.request_type == "return_invoice"
+											? "return_invoice"
+											: "sales_order";
+
+									let gcm_obj = {};
+
+									(gcm_obj.req_type = gcm_req_type),
+										(gcm_obj.action = "request");
+									// try{
+									if (isAllValid(salesOrderRequest.supervisor_id)) {
+										console.log(
+											"supervisor_id ===================",
+											salesOrderRequest.supervisor_id
+										);
+
+										try {
+											const gcmDev = await Models.GcmDevices.findOne({
+												where: {
+													employee_id: salesOrderRequest.supervisor_id
+												}
+											});
+
+											console.log("supervisor_id sending notify", gcmDev);
+											if (gcmDev != null && gcmDev.device_token != null) {
+												console.log(
+													"push notification function ======================"
+												);
+												_sendPushNotificationAndroid(
+													gcmDev.device_token,
+													notify_title,
+													notify_desc,
+													gcm_obj
+												);
+											} else console.log("data is null in gcmDev supervisor");
+
+											console.log(
+												"sales order finish herehuhu =======================",
+												1
+											);
+											return res.end(
+												JSON.stringify({
+													response: 1,
+													message: Messages["en"].SUCCESS_INSERT,
+													request_id: salesOrderRequest.id
+												})
+											);
+										} catch (err) {
+											console.log("error in sending notification");
+										}
+									}
+									console.log("invoice added in timeline =============");
+								} catch (err) {
+									console.log(
+										"error while adding invoice in timeline ============="
+									);
+									console.log("error in add timeline", error);
+								}
+								//return res.end( JSON.stringify({ response: 1, message: Messages["en"].SUCCESS_INSERT, request_id: salesOrderRequest.id }) );
+							}
+						}
+					} catch (err) {
+						return res.end(
+							JSON.stringify({ response: 3, message: "Error Occured" })
+						);
+					}
+				} else
+					return res.end(
+						JSON.stringify({ response: 0, message: Messages["en"].WRONG_DATA })
+					);
+			}
+		} catch (err) {
+			return res.end(
+				JSON.stringify({ response: 0, message: Messages["en"].ERROR_CREATE })
+			);
+		}
+	} else
+		res.end(
+			JSON.stringify({ response: 2, message: Messages["en"].WRONG_DATA })
+		);
+};
 
 /*
   # getting the customer's default payment method
 */
 
-exports.customer_payment_method = function(req,res){
-//   req.body = {
-// 		"user_id": "7",
-// 		"employee_id": "13",
-// 		"customer_id": "88",
-//   };
-  console.log(req.body)
-  const { user_id, customer_id } = req.body
-  const { error } = schema.customer_payment_method_schema.validate({ user_id, customer_id })
+exports.customer_payment_method = function(req, res) {
+	//   req.body = {
+	// 		"user_id": "7",
+	// 		"employee_id": "13",
+	// 		"customer_id": "88",
+	//   };
+	console.log(req.body);
+	const { user_id, customer_id } = req.body;
+	const { error } = schema.customer_payment_method_schema.validate({
+		user_id,
+		customer_id
+	});
 
-  if(error) return res.end( JSON.stringify({ response: 2, message: Messages["en"].WRONG_DATA }) )
-  Models.Customers.findOne({
-    where: {
-      user_id: user_id,
-      customer_id: customer_id
-    }
-  }).then( customer => {
-    console.log("debug: ", customer)
-    res.end( JSON.stringify({ response: 1, message: Messages["en"].SUCCESS_FETCH, result: customer.dataValues.payment_type }) )
-  }).catch(e=>{
-    res.end( JSON.stringify({ response: 3, message: Messages["en"].NOT_FOUND }) )
-  })
-}
+	if (error)
+		return res.end(
+			JSON.stringify({ response: 2, message: Messages["en"].WRONG_DATA })
+		);
+	Models.Customers.findOne({
+		where: {
+			user_id: user_id,
+			customer_id: customer_id
+		}
+	})
+		.then(customer => {
+			console.log("debug: ", customer);
+			res.end(
+				JSON.stringify({
+					response: 1,
+					message: Messages["en"].SUCCESS_FETCH,
+					result: customer.dataValues.payment_type
+				})
+			);
+		})
+		.catch(e => {
+			res.end(
+				JSON.stringify({ response: 3, message: Messages["en"].NOT_FOUND })
+			);
+		});
+};
 
-exports.supervisor_view_salesman_exceed_limit_products = async function(req,res){
-  //req.body = {"user_id":"7", "employee_id":"44", "customer_id":"88", "cart_type": "invoice"};
-  console.log("Sales cart item list req body >>>>>>>>>>>>>>>>>..", req.body)
-  if(isAllValid(req.body.user_id, req.body.employee_id, req.body.customer_id, req.body.cart_type)){
-    try{
-      const data = await Models.SalesOrderCartDetail.findAll({
-        where: {
-          user_id: req.body.user_id,
-          employee_id: req.body.employee_id,
-          customer_id: req.body.customer_id,
-          cart_type: req.body.cart_type
-        },
-        include: [
-          {
-            model: Models.Items,
-            as: "item_detail_in_sales_cart",
-            include: [
-              {
-                model: Models.ItemUnitConversion,
-                as: "item_measurement_units",
-                include: [
-                  {
-                    model: Models.MeasurementUnit,
-                    as: "measurement_unit_in_unit_conversion",
-                    required: false
-                  }
-                ]
-              }
-            ]
-          }
-        ]
-      })
-      return res.end(JSON.stringify({ response: 1, message: Messages['en'].SUCCESS_FETCH, result: data}))
-    }
-    catch(e){
-      return res.end(JSON.stringify({ response: 0, message: Messages['en'].ERROR_FETCH}))
-    }
-  }
-  else return res.end(JSON.stringify({ respones: 0, message: Messages['en'].WRONG_DATA}))
-}
+exports.supervisor_view_salesman_exceed_limit_products = async function(
+	req,
+	res
+) {
+	//req.body = {"user_id":"7", "employee_id":"44", "customer_id":"88", "cart_type": "invoice"};
+	console.log("Sales cart item list req body >>>>>>>>>>>>>>>>>..", req.body);
+	if (
+		isAllValid(
+			req.body.user_id,
+			req.body.employee_id,
+			req.body.customer_id,
+			req.body.cart_type
+		)
+	) {
+		try {
+			const data = await Models.SalesOrderCartDetail.findAll({
+				where: {
+					user_id: req.body.user_id,
+					employee_id: req.body.employee_id,
+					customer_id: req.body.customer_id,
+					cart_type: req.body.cart_type
+				},
+				include: [
+					{
+						model: Models.Items,
+						as: "item_detail_in_sales_cart",
+						include: [
+							{
+								model: Models.ItemUnitConversion,
+								as: "item_measurement_units",
+								include: [
+									{
+										model: Models.MeasurementUnit,
+										as: "measurement_unit_in_unit_conversion",
+										required: false
+									}
+								]
+							}
+						]
+					}
+				]
+			});
+			return res.end(
+				JSON.stringify({
+					response: 1,
+					message: Messages["en"].SUCCESS_FETCH,
+					result: data
+				})
+			);
+		} catch (e) {
+			return res.end(
+				JSON.stringify({ response: 0, message: Messages["en"].ERROR_FETCH })
+			);
+		}
+	} else
+		return res.end(
+			JSON.stringify({ respones: 0, message: Messages["en"].WRONG_DATA })
+		);
+};
 
 exports.sales_cart_items_list = function(req, res) {
 	// req.body = {"user_id":"7", "employee_id":"44", "customer_id":"88", "price_list_id":"2", "cart_type": "return_invoice"};
 	console.log("sales cart item list req body >>>>>>>>>>>>>>>>>>..", req.body);
-	if ( isAllValid(req.body.user_id, req.body.employee_id, req.body.customer_id, req.body.price_list_id, req.body.cart_type) ){
+	if (
+		isAllValid(
+			req.body.user_id,
+			req.body.employee_id,
+			req.body.customer_id,
+			req.body.price_list_id,
+			req.body.cart_type
+		)
+	) {
 		console.log("if ------------------------!!!");
 		Models.SalesOrderCartDetail.findAll({
 			where: {
 				user_id: req.body.user_id,
 				employee_id: req.body.employee_id,
-        customer_id: req.body.customer_id,
-        cart_type: req.body.cart_type
+				customer_id: req.body.customer_id,
+				cart_type: req.body.cart_type
 			},
 			include: [
 				{
@@ -6033,70 +6183,88 @@ exports.start_end_employee_journey = function(req, res) {
 	}
 };
 
-exports.customer_stock_quantity_permission_status = async function(req,res){
-    // {
-    //     "user_id": 8,
-    //     "employee_id": 10
-    // }
-    console.log(req.body)
-    if(! isAllValid(req.body.user_id, req.body.employee_id) ) return res.end(JSON.stringify({ response: 0, message: Messages['en'].WRONG_DATA }))
+exports.customer_stock_quantity_permission_status = async function(req, res) {
+	// {
+	//     "user_id": 8,
+	//     "employee_id": 10
+	// }
+	console.log(req.body);
+	if (!isAllValid(req.body.user_id, req.body.employee_id))
+		return res.end(
+			JSON.stringify({ response: 0, message: Messages["en"].WRONG_DATA })
+		);
 
-    try{
-        const result = await Models.EmployeePermissions.findOne({
-            where:{
-                user_id: req.body.user_id,
-                employee_id: req.body.employee_id
-            }
-        })
-        return res.end(JSON.stringify({ response:1, message: Messages['en'].SUCCESS_FETCH, result: result.display_product_quantity }))
-    }
-    catch(e){
-        return res.end(JSON.stringify({ response: 0, message: Messages['en'].NOT_FOUND }))
-    }
-}
+	try {
+		const result = await Models.EmployeePermissions.findOne({
+			where: {
+				user_id: req.body.user_id,
+				employee_id: req.body.employee_id
+			}
+		});
+		return res.end(
+			JSON.stringify({
+				response: 1,
+				message: Messages["en"].SUCCESS_FETCH,
+				result: result.display_product_quantity
+			})
+		);
+	} catch (e) {
+		return res.end(
+			JSON.stringify({ response: 0, message: Messages["en"].NOT_FOUND })
+		);
+	}
+};
 
-exports.customer_take_supervisor_permission = async function(req,res){
-//   req.body = {
-//     "user_id":"12",
-//     "cart_id": "55",
-//     "payment_type":"credit",
-//     "employee_id":"59",
-//     "store_id":"32",
-//     "customer_id":"113",
-//     "supervisor_id":"58",
-//     "total_price_without_tax_discount":50,
-//     "total_tax":8,
-//     "total_discount":0,
-//     "battery_life":"100",
-//     "latitude":"0.0",
-//     "longitude":"0.0",
-//     "android_version":"9",
-//     "app_version":"1",
-//     "total_price":1500,
-//     "level":"0",
-//     "request_type":"invoice",
-//     "salesmanager_id":"null",
-//     "sales_order_arr":[{
-//       "item_id":33,
-//       "measurement_unit_id":32,
-//       "quantity":1,
-//       "total_price":58000,
-//       "total_tax":8,
-//       "category_id":36,
-//       "total_price_with_tax": "58.0",
-//       "total_price_before_tax":50,
-//       "tax_type":"percentage",
-//       "base_price_per_unit":"50",
-//       "sales_order_promotions_arr":[]
-//     }]
-//   }
+exports.customer_take_supervisor_permission = async function(req, res) {
+	//   req.body = {
+	//     "user_id":"12",
+	//     "cart_id": "55",
+	//     "payment_type":"credit",
+	//     "employee_id":"59",
+	//     "store_id":"32",
+	//     "customer_id":"113",
+	//     "supervisor_id":"58",
+	//     "total_price_without_tax_discount":50,
+	//     "total_tax":8,
+	//     "total_discount":0,
+	//     "battery_life":"100",
+	//     "latitude":"0.0",
+	//     "longitude":"0.0",
+	//     "android_version":"9",
+	//     "app_version":"1",
+	//     "total_price":1500,
+	//     "level":"0",
+	//     "request_type":"invoice",
+	//     "salesmanager_id":"null",
+	//     "sales_order_arr":[{
+	//       "item_id":33,
+	//       "measurement_unit_id":32,
+	//       "quantity":1,
+	//       "total_price":58000,
+	//       "total_tax":8,
+	//       "category_id":36,
+	//       "total_price_with_tax": "58.0",
+	//       "total_price_before_tax":50,
+	//       "tax_type":"percentage",
+	//       "base_price_per_unit":"50",
+	//       "sales_order_promotions_arr":[]
+	//     }]
+	//   }
 
-  console.log("Input ============>", req.body)
-  
-	if (isAllValid(req.body.sales_order_arr, req.body.user_id, req.body.employee_id,
-    req.body.customer_id, req.body.supervisor_id, req.body.store_id, req.body.level) ) {
-    
-    /* 
+	console.log("Input ============>", req.body);
+
+	if (
+		isAllValid(
+			req.body.sales_order_arr,
+			req.body.user_id,
+			req.body.employee_id,
+			req.body.customer_id,
+			req.body.supervisor_id,
+			req.body.store_id,
+			req.body.level
+		)
+	) {
+		/* 
         already requested for exceed limit
         -> if yes 
             -> check status of the requst
@@ -6107,271 +6275,361 @@ exports.customer_take_supervisor_permission = async function(req,res){
             -> can edit / can submit / can request
     */
 
-    if(isAllValid(req.body.cart_id)){
-        try{
-            const cart = await Models.SalesOrderRequest.find({
-                where:{
-                    id: req.body.cart_id
-                }
-            })
+		if (isAllValid(req.body.cart_id)) {
+			try {
+				const cart = await Models.SalesOrderRequest.find({
+					where: {
+						id: req.body.cart_id
+					}
+				});
 
-            if(cart.supervisor_status == 'accepted') return res.end(JSON.stringify({ response: 1, message: 'Your exceed limit request have been accepted. You can not request now.', result: cart.id}))
-            if(cart.supervisor_status == 'pending') return res.end(JSON.stringify({ response: 1, message: 'Your exceed limit request is now in pending, wait for the approval of your request', result: cart.id}))
-            
-            const dest = await Models.SalesOrderRequest.destroy({
-                where: {
-                    id: req.body.cart_id,
-                    supervisor_status: 'rejected'
-                }
-            })
-            console.log('Deleted last rejected request, if there is')
-        }
-        catch(err){
-            console.log('error, as there are no cart request before')
-        }
-    }
+				if (cart.supervisor_status == "accepted")
+					return res.end(
+						JSON.stringify({
+							response: 1,
+							message:
+								"Your exceed limit request have been accepted. You can not request now.",
+							result: cart.id
+						})
+					);
+				if (cart.supervisor_status == "pending")
+					return res.end(
+						JSON.stringify({
+							response: 1,
+							message:
+								"Your exceed limit request is now in pending, wait for the approval of your request",
+							result: cart.id
+						})
+					);
 
-    /*
+				const dest = await Models.SalesOrderRequest.destroy({
+					where: {
+						id: req.body.cart_id,
+						supervisor_status: "rejected"
+					}
+				});
+				console.log("Deleted last rejected request, if there is");
+			} catch (err) {
+				console.log("error, as there are no cart request before");
+			}
+		}
+
+		/*
         here comes that means there was no exceed limit request of the cart before,
         and if there was, then that request is deleted already, as supervisor 
         rejected that request. so salesman can proceed now to request the current cart for
         exceed limit request
     */
-    let sales_order_arr = [];
-    
-    if (!Array.isArray(req.body.sales_order_arr)) sales_order_arr = [req.body.sales_order_arr];
-    else sales_order_arr = req.body.sales_order_arr;
-  
-    let create_sales = {};
-  
-    create_sales.user_id = req.body.user_id;
-    create_sales.request_level = req.body.level;
-    create_sales.employee_id = req.body.employee_id;
-    create_sales.customer_id = req.body.customer_id;
-    create_sales.store_id = req.body.store_id;
-    create_sales.supervisor_id = req.body.supervisor_id;
-    create_sales.no_of_items = sales_order_arr.length;
+		let sales_order_arr = [];
 
-    if(req.body.level > 1 && !isAllValid(req.body.salesmanager_id)) return res.end( JSON.stringify({ response: 2, message: Messages["en"].WRONG_DATA }));
-    else if (req.body.level > 1) {
-      create_sales.salesmanager_id = req.body.salesmanager_id;
-      create_sales.salesmanager_status = "pending";
-    }
-  
-    create_sales.supervisor_status = "pending"
-    create_sales.total_price_without_tax_discount = req.body.total_price_without_tax_discount;
-    create_sales.total_tax = req.body.total_tax;
-    create_sales.total_discount = req.body.total_discount;
-    create_sales.total_price = req.body.total_price;
-    create_sales.request_type =
-      req.body.request_type == "invoice" ? "invoice" : req.body.request_type == "return_invoice" ? "return_invoice" : "sales";
-  
-    /* made the updated requests */
-    try{
-      const salesOrderRequest = await Models.SalesOrderRequest.create(create_sales)
-      console.log("Created successfully ============>", salesOrderRequest) 
-      res.end( JSON.stringify({ response: 1, message: Messages["en"].SUCCESS_INSERT, cart_id: salesOrderRequest.id}))
-    }
-    catch(err){
-      return res.end( JSON.stringify({ response: 0, message: Messages["en"].ERROR_CREATE }) );
-    }
-  }
-  else res.end( JSON.stringify({ response: 2, message: Messages["en"].WRONG_DATA }))
-}
+		if (!Array.isArray(req.body.sales_order_arr))
+			sales_order_arr = [req.body.sales_order_arr];
+		else sales_order_arr = req.body.sales_order_arr;
 
-exports.customer_cart_supervisor_status = async function(req,res){
-  // req.body = {
-  //   "cart_id": "16",
-  //   "user_id":"12",
-  //   "payment_type":"credit",
-  //   "employee_id":"59",
-  //   "store_id":"32",
-  //   "customer_id":"113",
-  //   "supervisor_id":"58",
-  //   "total_price_without_tax_discount":50,
-  //   "total_tax":8,
-  //   "total_discount":0,
-  //   "battery_life":"100",
-  //   "latitude":"0.0",
-  //   "longitude":"0.0",
-  //   "android_version":"9",
-  //   "app_version":"1",
-  //   "total_price":1500,
-  //   "level":"0",
-  //   "request_type":"invoice",
-  //   "salesmanager_id":"null",
-  //   "sales_order_arr":[{
-  //     "item_id":33,
-  //     "measurement_unit_id":32,
-  //     "quantity":1,
-  //     "total_price":58000,
-  //     "total_tax":8,
-  //     "category_id":36,
-  //     "total_price_with_tax": "58.0",
-  //     "total_price_before_tax":50,
-  //     "tax_type":"percentage",
-  //     "base_price_per_unit":"50",
-  //     "sales_order_promotions_arr":[]
-  //   }]
-  // }
+		let create_sales = {};
 
-  console.log("Input ============>", req.body)
-  
-	if (isAllValid(req.body.cart_id) ) {
-  
-    try{
-      const data = await Models.SalesOrderRequest.findOne({
-        where:{
-          id: req.body.cart_id
-        }
-      })
-      if(data.supervisor_status!='rejected') return res.end( JSON.stringify({ response: 1, message: Messages["en"].SUCCESS_FETCH, result: data.supervisor_status }))
-      
-      
-      const dest = await Models.SalesOrderRequest.destroy({
-          where:{
-              id: req.body.cart_id,
-              supervisor_status: 'rejected'
-          }
-      })
-      return res.end(JSON.stringify({ response: 1, message: 'Successfully Deleted the rejected request' }))
-    }
-    catch(err){
-      return res.end( JSON.stringify({ response:0, message: Messages["en"].ERROR_FETCH }) )
-    }
-  }
-  else return res.end( JSON.stringify({ response: 2, message: Messages["en"].WRONG_DATA }) )
-}
+		create_sales.user_id = req.body.user_id;
+		create_sales.request_level = req.body.level;
+		create_sales.employee_id = req.body.employee_id;
+		create_sales.customer_id = req.body.customer_id;
+		create_sales.store_id = req.body.store_id;
+		create_sales.supervisor_id = req.body.supervisor_id;
+		create_sales.no_of_items = sales_order_arr.length;
 
-exports.get_credit_limit_exceed_requests_list = async function(req,res){
-//   req.body = {
-//     "user_id":"12",
-//     "supervisor_id":"58" 
-//   }
-  console.log(req.body)
-  
-  if(isAllValid(req.body.user_id) ){
+		if (req.body.level > 1 && !isAllValid(req.body.salesmanager_id))
+			return res.end(
+				JSON.stringify({ response: 2, message: Messages["en"].WRONG_DATA })
+			);
+		else if (req.body.level > 1) {
+			create_sales.salesmanager_id = req.body.salesmanager_id;
+			create_sales.salesmanager_status = "pending";
+		}
 
-    const where_cond = {}
-    where_cond.user_id = req.body.user_id;
-    where_cond.supervisor_status = 'pending'
-    if (isAllValid(req.body.supervisor_id)) where_cond.supervisor_id = req.body.supervisor_id;
-    if (isAllValid(req.body.salesmanager_id)) where_cond.salesmanager_id = req.body.salesmanager_id;
-    
-    try{
-      const data = await Models.SalesOrderRequest.findAll({
-        where_cond,
-        include: [
-          {
-            model: Models.Employees,
-            as: "employee_detail_in_sales_order_request",
-            attributes: {
-              include: [
-                "id",
-                "user_id",
-                "employee_name_en",
-                "employee_name_ar",
-                "phone_no",
-                "username"
-              ]
-            }
-          },
-          {
-            model: Models.Stores,
-            as: "store_detail_in_sales_order_request",
-            attributes: {
-              include: [
-                "id",
-                "user_id",
-                "store_number",
-                "store_name_en",
-                "store_name_ar",
-                "reference",
-                "note",
-                "status"
-              ]
-            }
-          }
-        ],
-        order: [["id", "DESC"]]
-      })
-      res.end( JSON.stringify({ response:1, message: Messages['en'].SUCCESS_FETCH, result: data }))
-    }
-    catch(err){
-      console.log(err)
-      res.end( JSON.stringify({ response:0, message: Messages["en"].ERROR_FETCH }))
-    }
-  }
-  else res.end( JSON.stringify({ response:0, message: Messages['en'].WRONG_DATA }))
-  
-}
+		create_sales.supervisor_status = "pending";
+		create_sales.total_price_without_tax_discount =
+			req.body.total_price_without_tax_discount;
+		create_sales.total_tax = req.body.total_tax;
+		create_sales.total_discount = req.body.total_discount;
+		create_sales.total_price = req.body.total_price;
+		create_sales.request_type =
+			req.body.request_type == "invoice"
+				? "invoice"
+				: req.body.request_type == "return_invoice"
+				? "return_invoice"
+				: "sales";
 
-exports.exceed_limit_request_change_status_supervisor = async function(req,res){
-  // req.body = {
-  //   "id": 14, // cart id
-  //   "status": "accepted" or "rejected"
-  // }
-  console.log("input =============> ", req.body)
-  if(isAllValid(req.body.cart_id, req.body.status)){
-    try{
-      const data = await Models.SalesOrderRequest.update({ supervisor_status: req.body.status}, 
-      { 
-        where: { id: req.body.cart_id } 
-      })
-      return res.end(JSON.stringify({ response: 1, message: Messages['en'].SUCCESS_UPDATE, result: data }))
-    }
-    catch(err){
-      console.log(err) 
-      return res.end(JSON.stringify({ response:0, message: Messages['en'].ERROR_CREATE }))
-    }
-  }
-  else{
-    return res.end(JSON.stringify({ response:0, message: Messages['en'].WRONG_DATA }))
-  }
-}
+		/* made the updated requests */
+		try {
+			const salesOrderRequest = await Models.SalesOrderRequest.create(
+				create_sales
+			);
+			console.log("Created successfully ============>", salesOrderRequest);
+			res.end(
+				JSON.stringify({
+					response: 1,
+					message: Messages["en"].SUCCESS_INSERT,
+					cart_id: salesOrderRequest.id
+				})
+			);
+		} catch (err) {
+			return res.end(
+				JSON.stringify({ response: 0, message: Messages["en"].ERROR_CREATE })
+			);
+		}
+	} else
+		res.end(
+			JSON.stringify({ response: 2, message: Messages["en"].WRONG_DATA })
+		);
+};
 
-exports.customer_set_currency = async function(req,res){
-    // req.body = {
-    //     "user_id" : 1,
-    //     "currency": "JOD",
-    //     "currency_short": "Jordanian Dinner"
-    // }
-    const { user_id, currency, currency_short  } = req.body
-    if(isAllValid(user_id, currency, currency_short)){
-        try{
-            const user = await Models.Users.update({ currency, currency_short }, 
-            {  
-                where: { 
-                    id: user_id 
-                } 
-            })
+exports.customer_cart_supervisor_status = async function(req, res) {
+	// req.body = {
+	//   "cart_id": "16",
+	//   "user_id":"12",
+	//   "payment_type":"credit",
+	//   "employee_id":"59",
+	//   "store_id":"32",
+	//   "customer_id":"113",
+	//   "supervisor_id":"58",
+	//   "total_price_without_tax_discount":50,
+	//   "total_tax":8,
+	//   "total_discount":0,
+	//   "battery_life":"100",
+	//   "latitude":"0.0",
+	//   "longitude":"0.0",
+	//   "android_version":"9",
+	//   "app_version":"1",
+	//   "total_price":1500,
+	//   "level":"0",
+	//   "request_type":"invoice",
+	//   "salesmanager_id":"null",
+	//   "sales_order_arr":[{
+	//     "item_id":33,
+	//     "measurement_unit_id":32,
+	//     "quantity":1,
+	//     "total_price":58000,
+	//     "total_tax":8,
+	//     "category_id":36,
+	//     "total_price_with_tax": "58.0",
+	//     "total_price_before_tax":50,
+	//     "tax_type":"percentage",
+	//     "base_price_per_unit":"50",
+	//     "sales_order_promotions_arr":[]
+	//   }]
+	// }
 
-            if(user == null) return res.end( JSON.stringify({ response:0, message: Messages['en'].NOT_FOUND }))
-            return res.end( JSON.stringify({ response:1, message: Messages['en'].SUCCESS_UPDATE, result: user }))
-        }
-        catch(err){
-            res.end( JSON.stringify({ response:0, message: Messages['en'].ERROR_CREATE }))
-        }
-    }
-    else{
-        res.end( JSON.stringify({ response:0, message: Messages['en'].WRONG_DATA }))
-    }
-}
+	console.log("Input ============>", req.body);
 
-exports.customer_available_get_currencies = async function(req,res){
-    try{
-        const data = await Models.Countries.findAll({
-            where:{
-                $not: { currency: null },
-                $not: { currency_short: null }
-            }
-        })
-        res.end( JSON.stringify({ response: 1, message: Messages['en'].SUCCESS_FETCH, result: data }) )
-    }
-    catch(err){
-        res.end( JSON.stringify({ response:0, message: Messages["en"].ERROR_FETCH }))
-    }
-}
+	if (isAllValid(req.body.cart_id)) {
+		try {
+			const data = await Models.SalesOrderRequest.findOne({
+				where: {
+					id: req.body.cart_id
+				}
+			});
+			if (data.supervisor_status != "rejected")
+				return res.end(
+					JSON.stringify({
+						response: 1,
+						message: Messages["en"].SUCCESS_FETCH,
+						result: data.supervisor_status
+					})
+				);
+
+			const dest = await Models.SalesOrderRequest.destroy({
+				where: {
+					id: req.body.cart_id,
+					supervisor_status: "rejected"
+				}
+			});
+			return res.end(
+				JSON.stringify({
+					response: 1,
+					message: "Successfully Deleted the rejected request"
+				})
+			);
+		} catch (err) {
+			return res.end(
+				JSON.stringify({ response: 0, message: Messages["en"].ERROR_FETCH })
+			);
+		}
+	} else
+		return res.end(
+			JSON.stringify({ response: 2, message: Messages["en"].WRONG_DATA })
+		);
+};
+
+exports.get_credit_limit_exceed_requests_list = async function(req, res) {
+	//   req.body = {
+	//     "user_id":"12",
+	//     "supervisor_id":"58"
+	//   }
+	console.log(req.body);
+
+	if (isAllValid(req.body.user_id)) {
+		const where_cond = {};
+		where_cond.user_id = req.body.user_id;
+		where_cond.supervisor_status = "pending";
+		if (isAllValid(req.body.supervisor_id))
+			where_cond.supervisor_id = req.body.supervisor_id;
+		if (isAllValid(req.body.salesmanager_id))
+			where_cond.salesmanager_id = req.body.salesmanager_id;
+
+		try {
+			const data = await Models.SalesOrderRequest.findAll({
+				where_cond,
+				include: [
+					{
+						model: Models.Employees,
+						as: "employee_detail_in_sales_order_request",
+						attributes: {
+							include: [
+								"id",
+								"user_id",
+								"employee_name_en",
+								"employee_name_ar",
+								"phone_no",
+								"username"
+							]
+						}
+					},
+					{
+						model: Models.Stores,
+						as: "store_detail_in_sales_order_request",
+						attributes: {
+							include: [
+								"id",
+								"user_id",
+								"store_number",
+								"store_name_en",
+								"store_name_ar",
+								"reference",
+								"note",
+								"status"
+							]
+						}
+					}
+				],
+				order: [["id", "DESC"]]
+			});
+			res.end(
+				JSON.stringify({
+					response: 1,
+					message: Messages["en"].SUCCESS_FETCH,
+					result: data
+				})
+			);
+		} catch (err) {
+			console.log(err);
+			res.end(
+				JSON.stringify({ response: 0, message: Messages["en"].ERROR_FETCH })
+			);
+		}
+	} else
+		res.end(
+			JSON.stringify({ response: 0, message: Messages["en"].WRONG_DATA })
+		);
+};
+
+exports.exceed_limit_request_change_status_supervisor = async function(
+	req,
+	res
+) {
+	// req.body = {
+	//   "id": 14, // cart id
+	//   "status": "accepted" or "rejected"
+	// }
+	console.log("input =============> ", req.body);
+	if (isAllValid(req.body.cart_id, req.body.status)) {
+		try {
+			const data = await Models.SalesOrderRequest.update(
+				{ supervisor_status: req.body.status },
+				{
+					where: { id: req.body.cart_id }
+				}
+			);
+			return res.end(
+				JSON.stringify({
+					response: 1,
+					message: Messages["en"].SUCCESS_UPDATE,
+					result: data
+				})
+			);
+		} catch (err) {
+			console.log(err);
+			return res.end(
+				JSON.stringify({ response: 0, message: Messages["en"].ERROR_CREATE })
+			);
+		}
+	} else {
+		return res.end(
+			JSON.stringify({ response: 0, message: Messages["en"].WRONG_DATA })
+		);
+	}
+};
+
+exports.customer_set_currency = async function(req, res) {
+	// req.body = {
+	//     "user_id" : 1,
+	//     "currency": "JOD",
+	//     "currency_short": "Jordanian Dinner"
+	// }
+	const { user_id, currency, currency_short } = req.body;
+	if (isAllValid(user_id, currency, currency_short)) {
+		try {
+			const user = await Models.Users.update(
+				{ currency, currency_short },
+				{
+					where: {
+						id: user_id
+					}
+				}
+			);
+
+			if (user == null)
+				return res.end(
+					JSON.stringify({ response: 0, message: Messages["en"].NOT_FOUND })
+				);
+			return res.end(
+				JSON.stringify({
+					response: 1,
+					message: Messages["en"].SUCCESS_UPDATE,
+					result: user
+				})
+			);
+		} catch (err) {
+			res.end(
+				JSON.stringify({ response: 0, message: Messages["en"].ERROR_CREATE })
+			);
+		}
+	} else {
+		res.end(
+			JSON.stringify({ response: 0, message: Messages["en"].WRONG_DATA })
+		);
+	}
+};
+
+exports.customer_available_get_currencies = async function(req, res) {
+	try {
+		const data = await Models.Countries.findAll({
+			where: {
+				$not: { currency: null },
+				$not: { currency_short: null }
+			}
+		});
+		res.end(
+			JSON.stringify({
+				response: 1,
+				message: Messages["en"].SUCCESS_FETCH,
+				result: data
+			})
+		);
+	} catch (err) {
+		res.end(
+			JSON.stringify({ response: 0, message: Messages["en"].ERROR_FETCH })
+		);
+	}
+};
 
 /*
     1. submit of 3 types
@@ -6477,8 +6735,8 @@ exports.sales_order_request_submit = async function(req, res) {
 	// };
 
 	// req.body = {
-  // 	"user_id": "7",
-  //  "cart_id": "16" // old_request_id 
+	// 	"user_id": "7",
+	//  "cart_id": "16" // old_request_id
 	// 	"employee_id": "40",
 	// 	"store_id": "29",
 	// 	"customer_id": "88",
@@ -6539,69 +6797,97 @@ exports.sales_order_request_submit = async function(req, res) {
 	// };
 	console.log(req.body);
 
-	if (isAllValid(req.body.sales_order_arr, req.body.user_id, req.body.employee_id,
-    req.body.customer_id, req.body.supervisor_id, req.body.store_id, req.body.level) ) {
-    
-    /*
+	if (
+		isAllValid(
+			req.body.sales_order_arr,
+			req.body.user_id,
+			req.body.employee_id,
+			req.body.customer_id,
+			req.body.supervisor_id,
+			req.body.store_id,
+			req.body.level
+		)
+	) {
+		/*
        # at submission, if he requested to supervisor before, then he has cart id
        # if there are cart id, there may be pending, accepted or rejected
        # if pending, then present cart_total_price is same, don't let him do for successful submission
        # if rejected, then present cart_total_price is same, don't let him do for successful submission
        # if accepted, then present cart_total_price is same, let him do for successfull submission
     */
-    if( isAllValid(req.body.cart_id) ){ // if not valid, that means, there are no cart id
-      try{
-        const oldCart = await Models.SalesOrderRequest.findOne({
-          where:{
-            id: req.body.cart_id
-          }
-        })
-        console.log('old cart==============================>', oldCart)
-        if(isAllValid(oldCart) && oldCart.supervisor_status == 'pending') return res.end( JSON.stringify({ response: 0, message: `You can not order. Your request is, ${oldCart.supervisor_status}` }) )
-        if(isAllValid(oldCart) && oldCart.supervisor_status == 'rejected'){
-          const destCart = await Models.SalesOrderRequest.destroy({
-            where: {
-              id: req.body.cart_id
-            }
-          })
-          console.log('deleted rejected request')
-          req.body.cart_id = null // so no cart id
-        }
-      }
-      catch(err){
-        console.log(err)
-        return res.end( JSON.stringify({ response:0, message: "This cart id is not found" }) )
-      }
-    }
+		if (isAllValid(req.body.cart_id)) {
+			// if not valid, that means, there are no cart id
+			try {
+				const oldCart = await Models.SalesOrderRequest.findOne({
+					where: {
+						id: req.body.cart_id
+					}
+				});
+				console.log("old cart==============================>", oldCart);
+				if (isAllValid(oldCart) && oldCart.supervisor_status == "pending")
+					return res.end(
+						JSON.stringify({
+							response: 0,
+							message: `You can not order. Your request is, ${oldCart.supervisor_status}`
+						})
+					);
+				if (isAllValid(oldCart) && oldCart.supervisor_status == "rejected") {
+					const destCart = await Models.SalesOrderRequest.destroy({
+						where: {
+							id: req.body.cart_id
+						}
+					});
+					console.log("deleted rejected request");
+					req.body.cart_id = null; // so no cart id
+				}
+			} catch (err) {
+				console.log(err);
+				return res.end(
+					JSON.stringify({ response: 0, message: "This cart id is not found" })
+				);
+			}
+		}
 
-    /*
+		/*
       # lets assume the cart id is valid, we see, it's not rejected or pending and found, 
       so the old cart is accepted by supervisor so we should not check the exceed limit
 
       # there is no cart_id, means this is the first submit of the cart
     */
-    if( !isAllValid( req.body.cart_id) ){
-      try{
-        const customer = await Models.Customers.findOne({
-          where: {
-            id: req.body.customer_id
-          }
-        })
-        console.log(customer)
-        if(customer == null) return res.end( JSON.stringify({ response: 3, message: Messages["en"].NOT_FOUND }) )
-        let buying_limit = customer.credit_limit
-        if( !isAllValid(buying_limit) ) buying_limit = 0
-        if(req.body.total_price > buying_limit) return res.end( JSON.stringify({ response: 0, message: `Exceeded credit limit. Limit is ${buying_limit}`, result: true }))
-      }
-      catch(err){
-        return res.end( JSON.stringify({ response: 0, message: Messages["en"].ERROR_FETCH }) );
-      }
-    }
-    /* ---------------- if total price is not more than customer's budget limit or accepted ----------------*/
+		if (!isAllValid(req.body.cart_id)) {
+			try {
+				const customer = await Models.Customers.findOne({
+					where: {
+						id: req.body.customer_id
+					}
+				});
+				console.log(customer);
+				if (customer == null)
+					return res.end(
+						JSON.stringify({ response: 3, message: Messages["en"].NOT_FOUND })
+					);
+				let buying_limit = customer.credit_limit;
+				if (!isAllValid(buying_limit)) buying_limit = 0;
+				if (req.body.total_price > buying_limit)
+					return res.end(
+						JSON.stringify({
+							response: 0,
+							message: `Exceeded credit limit. Limit is ${buying_limit}`,
+							result: true
+						})
+					);
+			} catch (err) {
+				return res.end(
+					JSON.stringify({ response: 0, message: Messages["en"].ERROR_FETCH })
+				);
+			}
+		}
+		/* ---------------- if total price is not more than customer's budget limit or accepted ----------------*/
 
-    let sales_order_arr = [];
-    
-		if (!Array.isArray(req.body.sales_order_arr)) sales_order_arr = [req.body.sales_order_arr];
+		let sales_order_arr = [];
+
+		if (!Array.isArray(req.body.sales_order_arr))
+			sales_order_arr = [req.body.sales_order_arr];
 		else sales_order_arr = req.body.sales_order_arr;
 
 		let create_sales = {};
@@ -6614,69 +6900,77 @@ exports.sales_order_request_submit = async function(req, res) {
 		create_sales.supervisor_id = req.body.supervisor_id;
 		create_sales.no_of_items = sales_order_arr.length;
 
-		if ( req.body.level > 1 && (req.body.salesmanager_id == null || req.body.salesmanager_id == "") ) {
-			return res.end( JSON.stringify({ response: 2, message: Messages["en"].WRONG_DATA }));
-    } 
-    else if (req.body.level > 1) {
+		if (
+			req.body.level > 1 &&
+			(req.body.salesmanager_id == null || req.body.salesmanager_id == "")
+		) {
+			return res.end(
+				JSON.stringify({ response: 2, message: Messages["en"].WRONG_DATA })
+			);
+		} else if (req.body.level > 1) {
 			create_sales.salesmanager_id = req.body.salesmanager_id;
 			create_sales.salesmanager_status = "pending";
-    }
-    
-    /*
+		}
+
+		/*
       supervisor status accepted, as it is lower than his budget
       or exceed limit rquest has been accepted
     */
 
-    create_sales.supervisor_status = "accepted"
-		create_sales.total_price_without_tax_discount = req.body.total_price_without_tax_discount;
+		create_sales.supervisor_status = "accepted";
+		create_sales.total_price_without_tax_discount =
+			req.body.total_price_without_tax_discount;
 		create_sales.total_tax = req.body.total_tax;
 		create_sales.total_discount = req.body.total_discount;
 		create_sales.total_price = req.body.total_price;
 		create_sales.request_type =
-			req.body.request_type == "invoice" ? "invoice" : req.body.request_type == "return_invoice" ? "return_invoice" : "sales";
-        
-    /*
+			req.body.request_type == "invoice"
+				? "invoice"
+				: req.body.request_type == "return_invoice"
+				? "return_invoice"
+				: "sales";
+
+		/*
       1. customer may have old rejected requests
       which should be deleted, as it is the the successful submission of the order 
     */
 
-    /* being deleted old requests with status 'rejected' */
-    try{
-      await Models.SalesOrderRequest.destroy({
-        where: {
-          user_id: req.body.user_id,
-          employee_id: req.body.employee_id,
-          customer_id: req.body.customer_id,
-          supervisor_status: 'rejected'
-        }
-      })
-      console.log('all the rejected requests before this are deleted')
-    }
-    catch(err){
-      console.log('Error at the time of deleting all the past requests ', err)
-    }
+		/* being deleted old requests with status 'rejected' */
+		try {
+			await Models.SalesOrderRequest.destroy({
+				where: {
+					user_id: req.body.user_id,
+					employee_id: req.body.employee_id,
+					customer_id: req.body.customer_id,
+					supervisor_status: "rejected"
+				}
+			});
+			console.log("all the rejected requests before this are deleted");
+		} catch (err) {
+			console.log("Error at the time of deleting all the past requests ", err);
+		}
 
-
-    /*
+		/*
       # may be there is old cart_id and status is accepted. then I should delete that sales_order_request
       # and made a successfull submission 
     */
 
-    try{
-      await Models.SalesOrderRequest.destroy({
-        where:{
-          id: req.body.cart_id
-        }
-      })
-      console.log('Requested cart with supervisor status "accepted" is deleted')
-    }
-    catch(err){
-      console.log(err)
-    }
+		try {
+			await Models.SalesOrderRequest.destroy({
+				where: {
+					id: req.body.cart_id
+				}
+			});
+			console.log(
+				'Requested cart with supervisor status "accepted" is deleted'
+			);
+		} catch (err) {
+			console.log(err);
+		}
 
-    // now everything is handled, go for successfull cart submission
+		// now everything is handled, go for successfull cart submission
 
-    /*
+		/*
       1. saved a record in sales_order_request
       2. loop through the sales_order_arr (this means we go through each products of the cart)
         1. if invoice 
@@ -6694,402 +6988,601 @@ exports.sales_order_request_submit = async function(req, res) {
           9. sending push notification
           10. sending sales_order_request_id
     */
-    try{
-      const salesOrderRequest = await Models.SalesOrderRequest.create(create_sales)
-      
-      console.log("Created successfully =====================================>", salesOrderRequest)
+		try {
+			const salesOrderRequest = await Models.SalesOrderRequest.create(
+				create_sales
+			);
 
-      if( !isAllValid(salesOrderRequest.id)) return res.end( JSON.stringify({ response: 0, message: Messages["en"].ERROR_CREATE }))
-    
-      console.log("q step 1 sales order request id", salesOrderRequest.id);
-      let request_id = salesOrderRequest.id;
-      let sales_order_arr_quantity = "true";
-      let timeline_content_type = req.body.request_type == "invoice" 
-        ? "invoice_order" : req.body.request_type == "return_invoice" ? "return_invoice_order" : "sales_order";
+			console.log(
+				"Created successfully =====================================>",
+				salesOrderRequest
+			);
 
-      for (let i = 0; i < sales_order_arr.length; i++) {
-        console.log("q step 2");
-        if( sales_order_arr[i].item_id && sales_order_arr[i].category_id && sales_order_arr[i].measurement_unit_id && sales_order_arr[i].quantity ) {
-          console.log("q step 3");
-          let create_sales_req = {};
-          
-          sale_req_detail = sales_order_arr[i];
-          
-          create_sales_req.user_id = req.body.user_id;
-          create_sales_req.employee_id = req.body.employee_id;
-          create_sales_req.customer_id = req.body.customer_id;
-          create_sales_req.store_id = req.body.store_id;
-          create_sales_req.sales_manager_id = req.body.sales_manager_id;
-          create_sales_req.item_id = sales_order_arr[i].item_id;
-          create_sales_req.category_id = sales_order_arr[i].category_id;
-          create_sales_req.sales_order_request_id = request_id;
-          create_sales_req.measurement_unit_id = sales_order_arr[i].measurement_unit_id;
-          create_sales_req.quantity = sales_order_arr[i].quantity;
-          create_sales_req.base_price_per_unit = sales_order_arr[i].base_price_per_unit;
-          create_sales_req.total_price = sales_order_arr[i].total_price;
-          create_sales_req.total_price_before_tax = sales_order_arr[i].total_price_before_tax;
-          create_sales_req.total_tax = sales_order_arr[i].total_tax;
-          create_sales_req.tax_type = sales_order_arr[i].tax_type;
+			if (!isAllValid(salesOrderRequest.id))
+				return res.end(
+					JSON.stringify({ response: 0, message: Messages["en"].ERROR_CREATE })
+				);
 
-          if ( isAllValid(sales_order_arr[i].total_price_with_tax, sales_order_arr[i].total_price_with_tax)) {
-            create_sales_req.total_price_with_tax = sales_order_arr[i].total_price_with_tax;
-          }
+			console.log("q step 1 sales order request id", salesOrderRequest.id);
+			let request_id = salesOrderRequest.id;
+			let sales_order_arr_quantity = "true";
+			let timeline_content_type =
+				req.body.request_type == "invoice"
+					? "invoice_order"
+					: req.body.request_type == "return_invoice"
+					? "return_invoice_order"
+					: "sales_order";
 
-          if ( isAllValid(sales_order_arr[i].bonus, sales_order_arr[i].bonus) ) create_sales_req.bonus = sales_order_arr[i].bonus
-          else create_sales_req.bonus = 0
+			for (let i = 0; i < sales_order_arr.length; i++) {
+				console.log("q step 2");
+				if (
+					sales_order_arr[i].item_id &&
+					sales_order_arr[i].category_id &&
+					sales_order_arr[i].measurement_unit_id &&
+					sales_order_arr[i].quantity
+				) {
+					console.log("q step 3");
+					let create_sales_req = {};
 
-          console.log("prom length====================", sale_req_detail.sales_order_promotions_arr);
+					sale_req_detail = sales_order_arr[i];
 
-          /*
+					create_sales_req.user_id = req.body.user_id;
+					create_sales_req.employee_id = req.body.employee_id;
+					create_sales_req.customer_id = req.body.customer_id;
+					create_sales_req.store_id = req.body.store_id;
+					create_sales_req.sales_manager_id = req.body.sales_manager_id;
+					create_sales_req.item_id = sales_order_arr[i].item_id;
+					create_sales_req.category_id = sales_order_arr[i].category_id;
+					create_sales_req.sales_order_request_id = request_id;
+					create_sales_req.measurement_unit_id =
+						sales_order_arr[i].measurement_unit_id;
+					create_sales_req.quantity = sales_order_arr[i].quantity;
+					create_sales_req.base_price_per_unit =
+						sales_order_arr[i].base_price_per_unit;
+					create_sales_req.total_price = sales_order_arr[i].total_price;
+					create_sales_req.total_price_before_tax =
+						sales_order_arr[i].total_price_before_tax;
+					create_sales_req.total_tax = sales_order_arr[i].total_tax;
+					create_sales_req.tax_type = sales_order_arr[i].tax_type;
+
+					if (
+						isAllValid(
+							sales_order_arr[i].total_price_with_tax,
+							sales_order_arr[i].total_price_with_tax
+						)
+					) {
+						create_sales_req.total_price_with_tax =
+							sales_order_arr[i].total_price_with_tax;
+					}
+
+					if (isAllValid(sales_order_arr[i].bonus, sales_order_arr[i].bonus))
+						create_sales_req.bonus = sales_order_arr[i].bonus;
+					else create_sales_req.bonus = 0;
+
+					console.log(
+						"prom length====================",
+						sale_req_detail.sales_order_promotions_arr
+					);
+
+					/*
             1. if request type is invoice,
               1. stock checking
               2. update stock (decrease)
               3. Invoice Request Stock Items for each product of the cart
           */
 
-          if (req.body.request_type == "invoice" && sales_order_arr[i].quantity != 0 ) {
-            try{
-              const stockItemData = await Models.StockItems.findOne({
-                where: {
-                  user_id: req.body.user_id,
-                  store_id: req.body.store_id,
-                  item_id: sales_order_arr[i].item_id,
-                  measurement_unit_id: sales_order_arr[i].measurement_unit_id
-                }
-              })
-              const habib = sales_order_arr[i];
-                  
-              if (stockItemData.quantity < sales_order_arr[i].quantity) {
-                console.log( "else sales order quantity ===================",stockItemData.quantity,sales_order_arr[i].quantity);
-                console.log("maximum quantity exceeded");
-                return res.end(JSON.stringify({ response: 2, message: Messages["en"].WRONG_DATA }));
-              }
-              console.log("if sales order quantity ===================", sales_order_arr[i]);
-              console.log("sales order arr with habib ==========>", habib)
-                  
-              const remain_quantity = stockItemData.quantity - sales_order_arr[i].quantity;
-            
-              const updatedStockItemQuantity = await Models.StockItems.update(
-                { quantity: remain_quantity },
-                {
-                  where: {
-                    user_id: req.body.user_id,
-                    store_id: req.body.store_id,
-                    item_id: sales_order_arr[i].item_id,
-                    measurement_unit_id: sales_order_arr[i].measurement_unit_id
-                  }
-                }
-              )
-              
-              console.log("stock item quantity updated ==================", sales_order_arr[i].quantity);
+					if (
+						req.body.request_type == "invoice" &&
+						sales_order_arr[i].quantity != 0
+					) {
+						try {
+							const stockItemData = await Models.StockItems.findOne({
+								where: {
+									user_id: req.body.user_id,
+									store_id: req.body.store_id,
+									item_id: sales_order_arr[i].item_id,
+									measurement_unit_id: sales_order_arr[i].measurement_unit_id
+								}
+							});
+							const habib = sales_order_arr[i];
 
-              if(!sales_order_arr[i]) sales_order_arr[i] = habib
-    
-              await Models.SalesOrderInvoiceRequestStockItems.create({
-                sales_order_request_id: salesOrderRequest.id,
-                user_id: req.body.user_id,
-                store_id: req.body.store_id,
-                item_id: sales_order_arr[i].item_id,
-                measurement_unit_id: sales_order_arr[i].measurement_unit_id,
-                quantity: sales_order_arr[i].quantity
-              })
-              console.log("sales order invoice request stock items created ==================");
-            }
-            catch(err){
-              console.log( "error in stock item quantity update ==================");
-              console.log(" OR error in sales order invoice request stock items create ==================");
-              return res.end( JSON.stringify({ response: 0, message: Messages["en"].ERROR_FETCH }));
-            }
-          }
+							if (stockItemData.quantity < sales_order_arr[i].quantity) {
+								console.log(
+									"else sales order quantity ===================",
+									stockItemData.quantity,
+									sales_order_arr[i].quantity
+								);
+								console.log("maximum quantity exceeded");
+								return res.end(
+									JSON.stringify({
+										response: 2,
+										message: Messages["en"].WRONG_DATA
+									})
+								);
+							}
+							console.log(
+								"if sales order quantity ===================",
+								sales_order_arr[i]
+							);
+							console.log("sales order arr with habib ==========>", habib);
 
-          /*
+							const remain_quantity =
+								stockItemData.quantity - sales_order_arr[i].quantity;
+
+							const updatedStockItemQuantity = await Models.StockItems.update(
+								{ quantity: remain_quantity },
+								{
+									where: {
+										user_id: req.body.user_id,
+										store_id: req.body.store_id,
+										item_id: sales_order_arr[i].item_id,
+										measurement_unit_id: sales_order_arr[i].measurement_unit_id
+									}
+								}
+							);
+
+							console.log(
+								"stock item quantity updated ==================",
+								sales_order_arr[i].quantity
+							);
+
+							if (!sales_order_arr[i]) sales_order_arr[i] = habib;
+
+							await Models.SalesOrderInvoiceRequestStockItems.create({
+								sales_order_request_id: salesOrderRequest.id,
+								user_id: req.body.user_id,
+								store_id: req.body.store_id,
+								item_id: sales_order_arr[i].item_id,
+								measurement_unit_id: sales_order_arr[i].measurement_unit_id,
+								quantity: sales_order_arr[i].quantity
+							});
+							console.log(
+								"sales order invoice request stock items created =================="
+							);
+						} catch (err) {
+							console.log(
+								"error in stock item quantity update =================="
+							);
+							console.log(
+								" OR error in sales order invoice request stock items create =================="
+							);
+							return res.end(
+								JSON.stringify({
+									response: 0,
+									message: Messages["en"].ERROR_FETCH
+								})
+							);
+						}
+					}
+
+					/*
             1. creating a record in sales_order_request_detail table
           */
 
-          try{
-            const requestData = await Models.SalesOrderRequestDetail.create( create_sales_req)
+					try {
+						const requestData = await Models.SalesOrderRequestDetail.create(
+							create_sales_req
+						);
 
-            console.log("add requestData id --- ---- ---- --- -- - - - -", requestData.id);
-            if (sale_req_detail.sales_order_promotions_arr.length > 0) {
+						console.log(
+							"add requestData id --- ---- ---- --- -- - - - -",
+							requestData.id
+						);
+						if (sale_req_detail.sales_order_promotions_arr.length > 0) {
+							console.log(
+								"if promo data  -----------------------------",
+								sale_req_detail.sales_order_promotions_arr
+							);
+							for (
+								let j = 0;
+								j < sale_req_detail.sales_order_promotions_arr.length;
+								j++
+							) {
+								// promotions_data = "";
+								promotions_data = sale_req_detail.sales_order_promotions_arr;
+								console.log(
+									"promotions data ----------------------------",
+									promotions_data
+								);
 
-              console.log("if promo data  -----------------------------",sale_req_detail.sales_order_promotions_arr);
-              for (let j = 0; j < sale_req_detail.sales_order_promotions_arr.length; j++) {
-                // promotions_data = "";
-                promotions_data = sale_req_detail.sales_order_promotions_arr;
-                console.log("promotions data ----------------------------",promotions_data);
-                
-                if(isAllValid(promotions_data[j].discount_percentage)) promotions_data[j].discount_percentage = promotions_data[j].discount_percentage;
-                else promotions_data[j].discount_percentage = 0;
+								if (isAllValid(promotions_data[j].discount_percentage))
+									promotions_data[j].discount_percentage =
+										promotions_data[j].discount_percentage;
+								else promotions_data[j].discount_percentage = 0;
 
-                if(isAllValid(promotions_data[j].discount_amount)) promotions_data[j].discount_amount = promotions_data[j].discount_amount;
-                else promotions_data[j].discount_amount = 0;
+								if (isAllValid(promotions_data[j].discount_amount))
+									promotions_data[j].discount_amount =
+										promotions_data[j].discount_amount;
+								else promotions_data[j].discount_amount = 0;
 
-                if(isAllValid(promotions_data[j].discount_type) ) promotions_data[j].discount_type = promotions_data[j].discount_type;
-                else promotions_data[j].discount_type = "NA";
-                
-                if (isAllValid( promotions_data[j].promotion_bonus_item_id)) promotions_data[j].promotion_bonus_item_id = promotions_data[j].promotion_bonus_item_id;
-                else promotions_data[j].promotion_bonus_item_id = null;
-                
-                if (isAllValid(promotions_data[j].promotion_bonus_quantity)) promotions_data[j].promotion_bonus_quantity = promotions_data[j].promotion_bonus_quantity;
-                else promotions_data[j].promotion_bonus_quantity = 0;
-                
-                if (isAllValid(promotions_data[j].promotion_type)) promotions_data[j].promotion_type = promotions_data[j].promotion_type;
-                else promotions_data[j].promotion_type = "NA";
+								if (isAllValid(promotions_data[j].discount_type))
+									promotions_data[j].discount_type =
+										promotions_data[j].discount_type;
+								else promotions_data[j].discount_type = "NA";
 
-                if(isAllValid(promotions_data[j].measurement_unit_id)) promotions_data[j].measurement_unit_id = promotions_data[j].measurement_unit_id;
-                else promotions_data[j].measurement_unit_id = null;
-                
+								if (isAllValid(promotions_data[j].promotion_bonus_item_id))
+									promotions_data[j].promotion_bonus_item_id =
+										promotions_data[j].promotion_bonus_item_id;
+								else promotions_data[j].promotion_bonus_item_id = null;
 
-                if(isAllValid(promotions_data[j].promotion_id)) promotions_data[j].promotion_id = promotions_data[j].promotion_id;
-                else promotions_data[j].promotion_id = null;
+								if (isAllValid(promotions_data[j].promotion_bonus_quantity))
+									promotions_data[j].promotion_bonus_quantity =
+										promotions_data[j].promotion_bonus_quantity;
+								else promotions_data[j].promotion_bonus_quantity = 0;
 
-                /*
+								if (isAllValid(promotions_data[j].promotion_type))
+									promotions_data[j].promotion_type =
+										promotions_data[j].promotion_type;
+								else promotions_data[j].promotion_type = "NA";
+
+								if (isAllValid(promotions_data[j].measurement_unit_id))
+									promotions_data[j].measurement_unit_id =
+										promotions_data[j].measurement_unit_id;
+								else promotions_data[j].measurement_unit_id = null;
+
+								if (isAllValid(promotions_data[j].promotion_id))
+									promotions_data[j].promotion_id =
+										promotions_data[j].promotion_id;
+								else promotions_data[j].promotion_id = null;
+
+								/*
                   # so we made an invoice for the products given by salesman
                     here we will make an invoice for the products of promotions
                 */
 
-                if( req.body.request_type == "invoice" && promotions_data[j].promotion_bonus_quantity != 0 ) {
-                  try{
-                    const stockItemData = await Models.StockItems.findOne({
-                      where: {
-                        user_id: req.body.user_id,
-                        store_id: req.body.store_id,
-                        item_id: promotions_data[j].promotion_bonus_item_id,
-                        measurement_unit_id: promotions_data[j].measurement_unit_id
-                      }
-                    })
+								if (
+									req.body.request_type == "invoice" &&
+									promotions_data[j].promotion_bonus_quantity != 0
+								) {
+									try {
+										const stockItemData = await Models.StockItems.findOne({
+											where: {
+												user_id: req.body.user_id,
+												store_id: req.body.store_id,
+												item_id: promotions_data[j].promotion_bonus_item_id,
+												measurement_unit_id:
+													promotions_data[j].measurement_unit_id
+											}
+										});
 
-                    if ( stockItemData.quantity < promotions_data[j].promotion_bonus_quantity) {
-                      console.log("promotion maximum quantity exceeded");
-                      return res.end( JSON.stringify({ response: 2,message: Messages["en"].WRONG_DATA }));
-                    }
+										if (
+											stockItemData.quantity <
+											promotions_data[j].promotion_bonus_quantity
+										) {
+											console.log("promotion maximum quantity exceeded");
+											return res.end(
+												JSON.stringify({
+													response: 2,
+													message: Messages["en"].WRONG_DATA
+												})
+											);
+										}
 
-                    const remain_quantity = stockItemData.quantity - promotions_data[j].promotion_bonus_quantity;
-                    
-                    await Models.StockItems.update(
-                      { quantity: remain_quantity },
-                      {
-                        where: {
-                          user_id: req.body.user_id,
-                          store_id: req.body.store_id,
-                          item_id: promotions_data[j].promotion_bonus_item_id,
-                          measurement_unit_id: promotions_data[j].measurement_unit_id
-                        }
-                      }
-                    )
-                    console.log("promotion stock item quantity updated ==================",promotions_data[j].promotion_bonus_quantity);
-                    
-                    await Models.SalesOrderInvoiceRequestStockItems.create({
-                      sales_order_request_id: salesOrderRequest.id,
-                      user_id: req.body.user_id,
-                      store_id: req.body.store_id,
-                      item_id: sales_order_arr[i].item_id,
-                      measurement_unit_id: sales_order_arr[i].measurement_unit_id,
-                      quantity: promotions_data[j].promotion_bonus_quantity
-                    })
-                    console.log( "sales order invoice request stock items created ==================");
-                  
-                  }
-                  catch(err){
-                    console.log("error in promotion stock item quantity update ==================")
-                    console.log("or error in sales order invoice stock items created=============")
-                    res.end( JSON.stringify({ response: 0, message: Messages["en"].ERROR_FETCH }) )            
-                  }
-                }
-              // }
+										const remain_quantity =
+											stockItemData.quantity -
+											promotions_data[j].promotion_bonus_quantity;
 
-              console.log("create promotion gggc >>>>>>>>>>>>>>>" + requestData.id);
-              
-              /*
+										await Models.StockItems.update(
+											{ quantity: remain_quantity },
+											{
+												where: {
+													user_id: req.body.user_id,
+													store_id: req.body.store_id,
+													item_id: promotions_data[j].promotion_bonus_item_id,
+													measurement_unit_id:
+														promotions_data[j].measurement_unit_id
+												}
+											}
+										);
+										console.log(
+											"promotion stock item quantity updated ==================",
+											promotions_data[j].promotion_bonus_quantity
+										);
+
+										await Models.SalesOrderInvoiceRequestStockItems.create({
+											sales_order_request_id: salesOrderRequest.id,
+											user_id: req.body.user_id,
+											store_id: req.body.store_id,
+											item_id: sales_order_arr[i].item_id,
+											measurement_unit_id:
+												sales_order_arr[i].measurement_unit_id,
+											quantity: promotions_data[j].promotion_bonus_quantity
+										});
+										console.log(
+											"sales order invoice request stock items created =================="
+										);
+									} catch (err) {
+										console.log(
+											"error in promotion stock item quantity update =================="
+										);
+										console.log(
+											"or error in sales order invoice stock items created============="
+										);
+										res.end(
+											JSON.stringify({
+												response: 0,
+												message: Messages["en"].ERROR_FETCH
+											})
+										);
+									}
+								}
+								// }
+
+								console.log(
+									"create promotion gggc >>>>>>>>>>>>>>>" + requestData.id
+								);
+
+								/*
                 1. promotions data added
                 2. sales order cart details deleted
                 3. sales order cart promotion deleted
               */
 
-                try{
-                  const addedPromotionsData = await Models.SalesOrderRequestDetailPromotion.create({
-                    sales_order_request_detail_id: requestData.id,
-                    discount_type: promotions_data[j].discount_type,
-                    promotion_id: promotions_data[j].promotion_id,
-                    promotion_type: promotions_data[j].promotion_type,
-                    discount_type: promotions_data[j].discount_type,
-                    discount_amount: promotions_data[j].discount_amount,
-                    discount_percentage: promotions_data[j].discount_percentage,
-                    promotion_bonus_item_id: promotions_data[j].promotion_bonus_item_id,
-                    promotion_bonus_quantity: promotions_data[j].promotion_bonus_quantity,
-                    measurement_unit_id: promotions_data[j].measurement_unit_id
-                  })
-                  
-                  const cartData = await Models.SalesOrderCartDetail.findAll({
-                    where: {
-                      user_id: req.body.user_id,
-                      employee_id: req.body.employee_id,
-                      customer_id: req.body.customer_id,
-                      item_id: requestData.item_id
-                    }
-                  })
+								try {
+									const addedPromotionsData = await Models.SalesOrderRequestDetailPromotion.create(
+										{
+											sales_order_request_detail_id: requestData.id,
+											discount_type: promotions_data[j].discount_type,
+											promotion_id: promotions_data[j].promotion_id,
+											promotion_type: promotions_data[j].promotion_type,
+											discount_type: promotions_data[j].discount_type,
+											discount_amount: promotions_data[j].discount_amount,
+											discount_percentage:
+												promotions_data[j].discount_percentage,
+											promotion_bonus_item_id:
+												promotions_data[j].promotion_bonus_item_id,
+											promotion_bonus_quantity:
+												promotions_data[j].promotion_bonus_quantity,
+											measurement_unit_id:
+												promotions_data[j].measurement_unit_id
+										}
+									);
 
-                  console.log( "cart data ------------------", cartData);
-                  
-                  if (cartData == null) return res.end( JSON.stringify({ response: 1, message: Messages["en"].SUCCESS_INSERT }))
+									const cartData = await Models.SalesOrderCartDetail.findAll({
+										where: {
+											user_id: req.body.user_id,
+											employee_id: req.body.employee_id,
+											customer_id: req.body.customer_id,
+											item_id: requestData.item_id
+										}
+									});
 
-                  for (let k = 0; k < cartData.length; k++) {
-                    cart_data = cartData[k];
-                    try{
-                      const destPromo = await Models.SalesOrderCartPromotion.destroy({
-                        where: {
-                          sales_order_cart_id: cart_data.id
-                        }
-                      })
-                      console.log("cart promotions deleted Successfully -----------------",destPromo);
-                      
-                      const destCart = await Models.SalesOrderCartDetail.destroy({
-                        where: {
-                          user_id: req.body.user_id,
-                          employee_id: req.body.employee_id,
-                          customer_id: req.body.customer_id,
-                          item_id: requestData.item_id
-                          // id:cart_data.id,
-                        }
-                      })
-                      console.log("cart detail deleted Successfully -----------------",destCart);
-                    }
-                    catch(err){
-                      console.log("**!!!! error in destroy sales order cart promotion !!!!**",err);
-                      console.log("OR **!!!! error in destroy sales order cart detail !!!!**",err);
-                    }
-                  }
-                }
-                catch(err){
-                  console.log("added promotions err", err);
-                  return res.end( JSON.stringify({ response: 0, message: Messages["en"].ERROR_CREATE }) );
-                }
-              }
-            }
-            else {
-              /*
+									console.log("cart data ------------------", cartData);
+
+									if (cartData == null)
+										return res.end(
+											JSON.stringify({
+												response: 1,
+												message: Messages["en"].SUCCESS_INSERT
+											})
+										);
+
+									for (let k = 0; k < cartData.length; k++) {
+										cart_data = cartData[k];
+										try {
+											const destPromo = await Models.SalesOrderCartPromotion.destroy(
+												{
+													where: {
+														sales_order_cart_id: cart_data.id
+													}
+												}
+											);
+											console.log(
+												"cart promotions deleted Successfully -----------------",
+												destPromo
+											);
+
+											const destCart = await Models.SalesOrderCartDetail.destroy(
+												{
+													where: {
+														user_id: req.body.user_id,
+														employee_id: req.body.employee_id,
+														customer_id: req.body.customer_id,
+														item_id: requestData.item_id
+														// id:cart_data.id,
+													}
+												}
+											);
+											console.log(
+												"cart detail deleted Successfully -----------------",
+												destCart
+											);
+										} catch (err) {
+											console.log(
+												"**!!!! error in destroy sales order cart promotion !!!!**",
+												err
+											);
+											console.log(
+												"OR **!!!! error in destroy sales order cart detail !!!!**",
+												err
+											);
+										}
+									}
+								} catch (err) {
+									console.log("added promotions err", err);
+									return res.end(
+										JSON.stringify({
+											response: 0,
+											message: Messages["en"].ERROR_CREATE
+										})
+									);
+								}
+							}
+						} else {
+							/*
                 1. cart data finding 
                 2. sales order cart promotion deleted for each product
                 3. sales order cart detail deleted for each product
               */
 
-              try{
-                const cartData = await Models.SalesOrderCartDetail.findAll({
-                  where: {
-                    user_id: req.body.user_id,
-                    employee_id: req.body.employee_id,
-                    customer_id: req.body.customer_id,
-                    item_id: requestData.item_id
-                  }
-                })
+							try {
+								const cartData = await Models.SalesOrderCartDetail.findAll({
+									where: {
+										user_id: req.body.user_id,
+										employee_id: req.body.employee_id,
+										customer_id: req.body.customer_id,
+										item_id: requestData.item_id
+									}
+								});
 
-                console.log("cart data ------------------", cartData);
-                if (cartData == null) return res.end( JSON.stringify({ response: 1, message: Messages["en"].SUCCESS_INSERT }))
-              
-                for (let k = 0; k < cartData.length; k++) {
-                  cart_data = cartData[k];
-                  try{
-                    const destPromo = await Models.SalesOrderCartPromotion.destroy({
-                      where: {
-                        sales_order_cart_id: cart_data.id
-                      }
-                    })
+								console.log("cart data ------------------", cartData);
+								if (cartData == null)
+									return res.end(
+										JSON.stringify({
+											response: 1,
+											message: Messages["en"].SUCCESS_INSERT
+										})
+									);
 
-                    const destCart = await Models.SalesOrderCartDetail.destroy({
-                      where: {
-                        user_id: req.body.user_id,
-                        employee_id: req.body.employee_id,
-                        customer_id: req.body.customer_id,
-                        item_id: requestData.item_id
-                        // id:cart_data.id,
-                      }
-                    })
-                    console.log("cart detail deleted Successfully -----------------", destCart);
-                  }
-                  catch(err){
-                    console.log('error in deleting cart promotion')
-                    console.log('Or error in deleting cart detail')
-                  }
-                }
-              }
-              catch(err){
-                return res.end( JSON.stringify({ response: 0, message: Messages["en"].ERROR_FETCH }) );
-              }
-            }
-          }
-          catch(err){
-            console.log( "********** error in sales order request detail add ************", err)
-            return res.end( JSON.stringify({ response: 0, message: Messages["en"].ERROR_CREATE }) )
-          }
-        }
-        else {
-          console.log("***** Warning: Wrong data or format *****");
-        }
+								for (let k = 0; k < cartData.length; k++) {
+									cart_data = cartData[k];
+									try {
+										const destPromo = await Models.SalesOrderCartPromotion.destroy(
+											{
+												where: {
+													sales_order_cart_id: cart_data.id
+												}
+											}
+										);
 
-        if( i == sales_order_arr.length - 1 ){
-          try{
-            const addTimeline = Models.Timelines.create({
-              content_id: salesOrderRequest.id,
-              content_type: timeline_content_type,
-              user_id: req.body.user_id,
-              employee_id: req.body.employee_id,
-              customer_id: req.body.customer_id,
-              battery_life: req.body.battery_life,
-              android_version: req.body.android_version,
-              app_version: req.body.app_version,
-              latitude: req.body.latitude,
-              longitude: req.body.longitude
-            })
-            
-            let notify_title = req.body.request_type == "invoice" ? "Invoice Request" : req.body.request_type == "return_invoice"
-              ? "Return Invoice Request" : "Sales Order Request";
-            let notify_desc = req.body.request_type == "invoice"
-              ? "You Have New Invoice Request" : req.body.request_type == "return_invoice"
-              ? "You Have New Return Invoice Request" : "You Have New Sales Order Request";
-            let gcm_req_type = req.body.request_type == "invoice" ? "invoice" : req.body.request_type == "return_invoice" ? "return_invoice" : "sales_order";
-            
-            let gcm_obj = {};
-            
-            (gcm_obj.req_type = gcm_req_type), (gcm_obj.action = "request");
-                // try{
-            if(isAllValid(salesOrderRequest.supervisor_id) ) {
-              console.log("supervisor_id ===================", salesOrderRequest.supervisor_id);
-                  
-              try{
-                const gcmDev = await Models.GcmDevices.findOne({
-                  where: {
-                    employee_id: salesOrderRequest.supervisor_id
-                  }
-                })
-                
-                console.log("supervisor_id sending notify", gcmDev);
-                if (gcmDev != null && gcmDev.device_token != null) {
-                  console.log("push notification function ======================");  
-                  _sendPushNotificationAndroid( gcmDev.device_token, notify_title, notify_desc, gcm_obj )
-                } 
-                else console.log("data is null in gcmDev supervisor");
+										const destCart = await Models.SalesOrderCartDetail.destroy({
+											where: {
+												user_id: req.body.user_id,
+												employee_id: req.body.employee_id,
+												customer_id: req.body.customer_id,
+												item_id: requestData.item_id
+												// id:cart_data.id,
+											}
+										});
+										console.log(
+											"cart detail deleted Successfully -----------------",
+											destCart
+										);
+									} catch (err) {
+										console.log("error in deleting cart promotion");
+										console.log("Or error in deleting cart detail");
+									}
+								}
+							} catch (err) {
+								return res.end(
+									JSON.stringify({
+										response: 0,
+										message: Messages["en"].ERROR_FETCH
+									})
+								);
+							}
+						}
+					} catch (err) {
+						console.log(
+							"********** error in sales order request detail add ************",
+							err
+						);
+						return res.end(
+							JSON.stringify({
+								response: 0,
+								message: Messages["en"].ERROR_CREATE
+							})
+						);
+					}
+				} else {
+					console.log("***** Warning: Wrong data or format *****");
+				}
 
-                console.log("sales order finish herehuhu =======================", 1);
-                return res.end( JSON.stringify({ response: 1, message: Messages["en"].SUCCESS_INSERT, request_id: salesOrderRequest.id }) );
-              }
-              catch(err){
-                console.log("error in sending notification");
-              }
-            }
-            console.log("invoice added in timeline =============");
-          }
-          catch(err){
-            console.log( "error while adding invoice in timeline =============" );
-            console.log("error in add timeline", err);
-          }
-        }
-      }
-    } 
-    catch(err){
-      return res.end( JSON.stringify({ response: 0, message: Messages["en"].ERROR_CREATE }) );
-    }
-  }
-  else res.end( JSON.stringify({ response: 2, message: Messages["en"].WRONG_DATA }) );
+				if (i == sales_order_arr.length - 1) {
+					try {
+						const addTimeline = Models.Timelines.create({
+							content_id: salesOrderRequest.id,
+							content_type: timeline_content_type,
+							user_id: req.body.user_id,
+							employee_id: req.body.employee_id,
+							customer_id: req.body.customer_id,
+							battery_life: req.body.battery_life,
+							android_version: req.body.android_version,
+							app_version: req.body.app_version,
+							latitude: req.body.latitude,
+							longitude: req.body.longitude
+						});
+
+						let notify_title =
+							req.body.request_type == "invoice"
+								? "Invoice Request"
+								: req.body.request_type == "return_invoice"
+								? "Return Invoice Request"
+								: "Sales Order Request";
+						let notify_desc =
+							req.body.request_type == "invoice"
+								? "You Have New Invoice Request"
+								: req.body.request_type == "return_invoice"
+								? "You Have New Return Invoice Request"
+								: "You Have New Sales Order Request";
+						let gcm_req_type =
+							req.body.request_type == "invoice"
+								? "invoice"
+								: req.body.request_type == "return_invoice"
+								? "return_invoice"
+								: "sales_order";
+
+						let gcm_obj = {};
+
+						(gcm_obj.req_type = gcm_req_type), (gcm_obj.action = "request");
+						// try{
+						if (isAllValid(salesOrderRequest.supervisor_id)) {
+							console.log(
+								"supervisor_id ===================",
+								salesOrderRequest.supervisor_id
+							);
+
+							try {
+								const gcmDev = await Models.GcmDevices.findOne({
+									where: {
+										employee_id: salesOrderRequest.supervisor_id
+									}
+								});
+
+								console.log("supervisor_id sending notify", gcmDev);
+								if (gcmDev != null && gcmDev.device_token != null) {
+									console.log(
+										"push notification function ======================"
+									);
+									_sendPushNotificationAndroid(
+										gcmDev.device_token,
+										notify_title,
+										notify_desc,
+										gcm_obj
+									);
+								} else console.log("data is null in gcmDev supervisor");
+
+								console.log(
+									"sales order finish herehuhu =======================",
+									1
+								);
+								return res.end(
+									JSON.stringify({
+										response: 1,
+										message: Messages["en"].SUCCESS_INSERT,
+										request_id: salesOrderRequest.id
+									})
+								);
+							} catch (err) {
+								console.log("error in sending notification");
+							}
+						}
+						console.log("invoice added in timeline =============");
+					} catch (err) {
+						console.log("error while adding invoice in timeline =============");
+						console.log("error in add timeline", err);
+					}
+				}
+			}
+		} catch (err) {
+			return res.end(
+				JSON.stringify({ response: 0, message: Messages["en"].ERROR_CREATE })
+			);
+		}
+	} else
+		res.end(
+			JSON.stringify({ response: 2, message: Messages["en"].WRONG_DATA })
+		);
 };
 
 exports.sales_order_cart_remove_item = function(req, res) {
@@ -9007,7 +9500,7 @@ exports.get_customer_bank_branch_drawers = function(req, res) {
 };
 
 exports.submit_payment = function(req, res) {
-	console.log("req body data ===================", req.body);
+	winston.log('info', "req body data ===================", req.body);
 	if (
 		req.body.user_id != null &&
 		req.body.user_id != "" &&
@@ -9027,7 +9520,7 @@ exports.submit_payment = function(req, res) {
 
 		if (req.body.payment_type == "cheque") {
 			if (req.files && req.files.image != "" && req.files.image != null) {
-				console.log("files ===========================");
+				winston.log('info', "files ===========================");
 				let image = req.files.image;
 				image_name =
 					Date.now() +
@@ -9058,7 +9551,7 @@ exports.submit_payment = function(req, res) {
 					}
 				);
 			}
-			console.log("req body under cheque =================", req.body);
+			winston.log('info', "req body under cheque =================", req.body);
 			Models.CustomerPayments.create({
 				user_id: req.body.user_id,
 				employee_id: req.body.employee_id,
@@ -9076,7 +9569,7 @@ exports.submit_payment = function(req, res) {
 				image: req.body.image ? req.body.image : null
 			}).then(
 				submitPaymentData => {
-					console.log("success ===================");
+					winston.log('debug', "success ===================");
 
 					Models.Timelines.create({
 						content_id: submitPaymentData.id,
@@ -9092,14 +9585,14 @@ exports.submit_payment = function(req, res) {
 						longitude: req.body.longitude
 					}).then(
 						addTimeline => {
-							console.log("added timeline =====================");
+							winston.log('info', "added timeline =====================");
 							Models.Employees.findOne({
 								where: {
 									id: req.body.employee_id
 								}
 							}).then(
 								employeeData => {
-									console.log("under employee data =====================");
+									winston.log('info', "under employee data =====================");
 
 									Models.Customers.findOne({
 										where: {
@@ -9107,13 +9600,13 @@ exports.submit_payment = function(req, res) {
 										}
 									}).then(
 										customerData => {
-											console.log("under customer data =====================");
+											winston.log('info', "under customer data =====================");
 											let credit_amount;
-											console.log(
+											winston.log('info', 
 												"req amount ===============",
 												req.body.amount
 											);
-											console.log(
+											winston.log('info', 
 												"credit limit ===============",
 												customerData.credit_limit
 											);
@@ -9127,7 +9620,7 @@ exports.submit_payment = function(req, res) {
 											} else {
 												credit_amount = customerData.credit_limit;
 											}
-											console.log(
+											winston.log('info', 
 												"credit amount ===============",
 												credit_amount
 											);
@@ -9140,84 +9633,68 @@ exports.submit_payment = function(req, res) {
 														id: req.body.customer_id
 													}
 												}
-											).then(
-												updateLimit => {
-													console.log(
-														"under update limit ====================="
-													);
-													let gcm_obj = {};
-													(gcm_obj.req_type = "payment"),
-														(gcm_obj.action = "submit");
+                      )
+                      .then( updateLimit => {
+                        winston.log('info', 
+                          "under update limit ====================="
+                        );
+                        let gcm_obj = {};
+                        (gcm_obj.req_type = "payment"),
+                          (gcm_obj.action = "submit");
 
-													if (
-														submitPaymentData.supervisor_id != null &&
-														submitPaymentData.supervisor_id != ""
-													) {
-														console.log(
-															"supervisor_id ===================",
-															submitPaymentData.supervisor_id
-														);
-														Models.GcmDevices.findOne({
-															where: {
-																employee_id: submitPaymentData.supervisor_id
-															}
-														}).then(
-															gcmDev => {
-																console.log(
-																	"supervisor_id sending notify",
-																	gcmDev
-																);
-																if (
-																	gcmDev != null &&
-																	gcmDev.device_token != null
-																) {
-																	console.log(
-																		"push notification function ======================"
-																	);
-																	_sendPushNotificationAndroid(
-																		gcmDev.device_token,
-																		"Payment",
-																		"Payment is done via " +
-																			submitPaymentData.payment_type +
-																			" of " +
-																			submitPaymentData.amount +
-																			" by " +
-																			employeeData.employee_name_en,
-																		gcm_obj
-																	);
-																} else {
-																	console.log(
-																		"data is null in gcmDev supervisor"
-																	);
-																}
-															},
-															error => {
-																console.log("error in sending notification");
-															}
-														);
-													}
+                        if (
+                          submitPaymentData.supervisor_id != null &&
+                          submitPaymentData.supervisor_id != ""
+                        ) {
+                          winston.log('info', 
+                            "supervisor_id ===================",
+                            submitPaymentData.supervisor_id
+                          );
+                          Models.GcmDevices.findOne({
+                            where: {
+                              employee_id: submitPaymentData.supervisor_id
+                            }
+                          })
+                          .then( gcmDev => {
+                            winston.log('info', "supervisor_id sending notify", gcmDev);
+                            if ( gcmDev != null && gcmDev.device_token != null) {
+                              winston.log('info', "push notification function ======================");
+                              _sendPushNotificationAndroid(
+                                gcmDev.device_token,
+                                "Payment",
+                                "Payment is done via " +
+                                  submitPaymentData.payment_type +
+                                  " of " +
+                                  submitPaymentData.amount +
+                                  " by " +
+                                  employeeData.employee_name_en,
+                                gcm_obj
+                              );
+                            } 
+                            else {
+                              winston.log('warn', "data is null in gcmDev supervisor");
+                            }
+                          },
+                          error => {
+                            winston.log('error', "error in sending notification");
+                          })
+                        }
 
-													console.log(
-														"success insert ======================== "
-													);
-													res.end(
-														JSON.stringify({
-															response: 1,
-															message: Messages["en"].SUCCESS_INSERT,
-															result: submitPaymentData
-														})
-													);
-												},
-												error => {
-													console.log("error ==================", error);
-													res.end(
-														JSON.stringify({
-															response: 0,
-															message: Messages["en"].ERROR_CREATE
-														})
-													);
-												}
-											);
+                        winston.log('info',
+                          "success insert ======================== "
+                        );
+                        res.end(
+                          JSON.stringify({
+                            response: 1,
+                            message: Messages["en"].SUCCESS_INSERT,
+                            result: submitPaymentData
+                          })
+                        );
+                      },
+                      error => {
+                        winston.log('error', "error ==================", error);
+                        res.end(JSON.stringify({ response: 0, message: Messages["en"].ERROR_CREATE }))
+                      })
 										},
 										error => {
 											res.end(
@@ -9240,32 +9717,23 @@ exports.submit_payment = function(req, res) {
 							);
 						},
 						error => {
-							console.log("error in add timeline", error);
-							res.end(
-								JSON.stringify({
-									response: 0,
-									message: Messages["en"].SOMETHING_WRONG
-								})
-							);
+							winston.log('error', "error in add timeline", error);
+							res.end(JSON.stringify({ response: 0, message: Messages["en"].SOMETHING_WRONG }));
 						}
 					);
 				},
 				error => {
-					console.log("error ===================", error);
-					res.end(
-						JSON.stringify({
-							response: 0,
-							message: Messages["en"].ERROR_CREATE
-						})
-					);
+					winston.log('error', "error ===================", error);
+					res.end(JSON.stringify({ response: 0, message: Messages["en"].ERROR_CREATE }))
 				}
 			);
-		} else {
+    } 
+    else {
 			req.body.reference_no =
 				"RF_" + Date.now() + "_" + Math.floor(10000 + Math.random() * 90000);
 			req.body.payment_no =
 				"PN_" + Date.now() + "_" + Math.floor(10000 + Math.random() * 90000);
-			console.log("req body under cash =================", req.body);
+			winston.log('info', "req body under cash =================", req.body);
 			Models.CustomerPayments.create({
 				user_id: req.body.user_id,
 				employee_id: req.body.employee_id,
@@ -9282,7 +9750,7 @@ exports.submit_payment = function(req, res) {
 				note: req.body.note ? req.body.note : null
 			}).then(
 				submitPaymentData => {
-					console.log("success cash payment ===================");
+					winston.log('info', "success cash payment ===================");
 
 					Models.Timelines.create({
 						content_id: submitPaymentData.id,
@@ -9337,7 +9805,7 @@ exports.submit_payment = function(req, res) {
 														submitPaymentData.supervisor_id != null &&
 														submitPaymentData.supervisor_id != ""
 													) {
-														console.log(
+														winston.log('info', 
 															"supervisor_id ===================",
 															submitPaymentData.supervisor_id
 														);
@@ -9347,7 +9815,7 @@ exports.submit_payment = function(req, res) {
 															}
 														}).then(
 															gcmDev => {
-																console.log(
+																winston.log('info',
 																	"supervisor_id sending notify",
 																	gcmDev
 																);
@@ -9355,7 +9823,7 @@ exports.submit_payment = function(req, res) {
 																	gcmDev != null &&
 																	gcmDev.device_token != null
 																) {
-																	console.log(
+																	winston.log('info',
 																		"push notification function ======================"
 																	);
 																	_sendPushNotificationAndroid(
@@ -9370,13 +9838,13 @@ exports.submit_payment = function(req, res) {
 																		gcm_obj
 																	);
 																} else {
-																	console.log(
+																	winston.log('warn',
 																		"data is null in gcmDev supervisor"
 																	);
 																}
 															},
 															error => {
-																console.log("error in sending notification");
+																winston.log('error', "error in sending notification");
 															}
 														);
 													}
@@ -9420,7 +9888,7 @@ exports.submit_payment = function(req, res) {
 							);
 						},
 						error => {
-							console.log("error in add timeline", error);
+							winston.log('error', "error in add timeline", error);
 							res.end(
 								JSON.stringify({
 									response: 0,
@@ -9431,7 +9899,7 @@ exports.submit_payment = function(req, res) {
 					);
 				},
 				error => {
-					console.log("error cash payment ===================", error);
+					winston.log('error', "error cash payment ===================", error);
 					res.end(
 						JSON.stringify({
 							response: 0,
@@ -9623,7 +10091,7 @@ exports.timeline_for_specific_customer = function(req, res) {
 		req.body.customer_id != null &&
 		req.body.customer_id != ""
 	) {
-		console.log("specific under if =========================", req.body);
+		winston.log('info', "specific under if =========================", req.body);
 		Models.Timelines.findAll({
 			where: {
 				user_id: req.body.user_id,
@@ -9681,7 +10149,7 @@ exports.timeline_for_specific_customer = function(req, res) {
 			order: [["id", "DESC"]]
 		}).then(
 			timelineData => {
-				console.log("specific success =====================", timelineData);
+				winston.log('info', "specific success =====================", timelineData);
 				res.end(
 					JSON.stringify({
 						response: 1,

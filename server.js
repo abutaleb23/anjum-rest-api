@@ -1,3 +1,4 @@
+const winston = require('winston')
 var express=require('express');
 var app=express();
 var routes=require('./routes/index.js');
@@ -9,6 +10,8 @@ app.use(bodyParser.json({limit: '1000mb'}));
 app.use(bodyParser.urlencoded({limit: '1000mb', extended: true }));
 
 app.use(fileUpload());
+
+winston.add(new winston.transports.File({ filename: 'logfile.log' }));
 
 app.get('/', routes.home);
 

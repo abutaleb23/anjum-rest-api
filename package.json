@@ -23,6 +23,7 @@
     "path": "^0.12.7",
     "request": "^2.88.0",
     "sequelize": "^4.43.0",
-    "twin-bcrypt": "^2.1.1"
+    "twin-bcrypt": "^2.1.1",
+    "winston": "^3.2.1"
   }
 }
