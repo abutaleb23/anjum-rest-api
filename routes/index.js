@@ -6653,13 +6653,21 @@ exports.exceed_limit_request_change_status_supervisor = async function(
 	console.log("input =============> ", req.body);
 	if (isAllValid(req.body.cart_id, req.body.status)) {
 		try {
-			const salesOrderRequest = await Models.SalesOrderRequest.update(
+			await Models.SalesOrderRequest.update(
 				{ supervisor_status: req.body.status },
 				{
 					where: { id: req.body.cart_id }
 				}
-			);
+            );
+            console.log('updated================>')
 
+            const salesOrderRequest = await Models.SalesOrderRequest.findOne({
+                where:{
+                    id: req.body.cart_id
+                }
+            })
+
+            console.log('salesOrderRequest ====================> ', salesOrderRequest)
 			// sending push notification
 			let notify_title = `Exceed Limit Request status`;
 			let notify_desc = "Exceed Limit Request " + req.body.status;
@@ -6701,10 +6709,12 @@ exports.exceed_limit_request_change_status_supervisor = async function(
                             result: salesOrderRequest
                         })
                     );
-				} catch (err) {
-					console.log("error in sending notification");
+                } 
+                catch (err) {
+                    console.log("error in sending notification");
 				}
-			}
+            }
+            
 		} catch (err) {
 			console.log(err);
 			return res.end(
