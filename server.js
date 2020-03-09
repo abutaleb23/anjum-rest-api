@@ -83,6 +83,7 @@ app.post('/employee/deleteAllSalesCartItems', routes.delete_all_sales_cart_items
 app.post('/employee/adjustItemsFromSalesCart', routes.adjust_items_from_sales_cart);
 app.post('/employee/customers-payment-method', routes.customer_payment_method) 
 app.post('/employee/customers-take-supervisor-permission', routes.customer_take_supervisor_permission)
+app.post('/employee/customers-get-latest-cart-id', routes.customer_get_latest_cart_id)
 app.post('/employee/customers-cart-supervisor-status', routes.customer_cart_supervisor_status)
 app.post('/employee/exceedLimitRequestChangeStatusSupervisor', routes.exceed_limit_request_change_status_supervisor)
 app.post('/employee/customers-set-currency', routes.customer_set_currency)

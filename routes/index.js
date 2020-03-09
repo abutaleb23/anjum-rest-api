@@ -1,4 +1,4 @@
-const winston = require('winston')
+const winston = require("winston");
 var express = require("express");
 var app = express();
 var Sequelize = require("sequelize");
@@ -6364,13 +6364,52 @@ exports.customer_take_supervisor_permission = async function(req, res) {
 				create_sales
 			);
 			console.log("Created successfully ============>", salesOrderRequest);
-			res.end(
-				JSON.stringify({
-					response: 1,
-					message: Messages["en"].SUCCESS_INSERT,
-					cart_id: salesOrderRequest.id
-				})
-			);
+
+			// timeline
+			let notify_title = "Exceed Limit Request";
+			let notify_desc = "Exceed Limit Request";
+			let gcm_req_type = "Exceed Limit Request";
+
+			let gcm_obj = {};
+
+			(gcm_obj.req_type = gcm_req_type), (gcm_obj.action = "request");
+			// try{
+			if (isAllValid(salesOrderRequest.supervisor_id)) {
+				console.log(
+					"supervisor_id ===================",
+					salesOrderRequest.supervisor_id
+				);
+
+				try {
+					const gcmDev = await Models.GcmDevices.findOne({
+						where: {
+							employee_id: salesOrderRequest.supervisor_id
+						}
+					});
+
+					console.log("supervisor_id sending notify", gcmDev);
+					if (gcmDev != null && gcmDev.device_token != null) {
+						console.log("push notification function ======================");
+						_sendPushNotificationAndroid(
+							gcmDev.device_token,
+							notify_title,
+							notify_desc,
+							gcm_obj
+						);
+					} else console.log("data is null in gcmDev supervisor");
+
+					console.log("sales order finish herehuhu =======================", 1);
+					res.end(
+						JSON.stringify({
+							response: 1,
+							message: Messages["en"].SUCCESS_INSERT,
+							cart_id: salesOrderRequest.id
+						})
+					);
+				} catch (err) {
+					console.log("error in sending notification");
+				}
+			}
 		} catch (err) {
 			return res.end(
 				JSON.stringify({ response: 0, message: Messages["en"].ERROR_CREATE })
@@ -6381,6 +6420,78 @@ exports.customer_take_supervisor_permission = async function(req, res) {
 			JSON.stringify({ response: 2, message: Messages["en"].WRONG_DATA })
 		);
 };
+
+exports.customer_get_latest_cart_id = async function(req, res){
+    // req.body = {
+	//   "cart_id": "16",
+	//   "user_id":"12",
+	//   "payment_type":"credit",
+	//   "employee_id":"59",
+	//   "store_id":"32",
+	//   "customer_id":"113",
+	//   "supervisor_id":"58",
+	//   "total_price_without_tax_discount":50,
+	//   "total_tax":8,
+	//   "total_discount":0,
+	//   "battery_life":"100",
+	//   "latitude":"0.0",
+	//   "longitude":"0.0",
+	//   "android_version":"9",
+	//   "app_version":"1",
+	//   "total_price":1500,
+	//   "level":"0",
+	//   "request_type":"invoice",
+	//   "salesmanager_id":"null",
+	//   "sales_order_arr":[{
+	//     "item_id":33,
+	//     "measurement_unit_id":32,
+	//     "quantity":1,
+	//     "total_price":58000,
+	//     "total_tax":8,
+	//     "category_id":36,
+	//     "total_price_with_tax": "58.0",
+	//     "total_price_before_tax":50,
+	//     "tax_type":"percentage",
+	//     "base_price_per_unit":"50",
+	//     "sales_order_promotions_arr":[]
+	//   }]
+	// }
+
+    console.log("Input ============>", req.body);
+
+    const { user_id, employee_id, customer_id, supervisor_id } = req.body 
+    
+    if (isAllValid( user_id, employee_id, customer_id, supervisor_id)) {
+		try {
+			const salesOrderRequest = await Models.SalesOrderRequest.findOne({
+				where: {
+                    user_id, 
+                    employee_id,
+                    customer_id,
+                    supervisor_id
+                },
+                order: [["id", "DESC"]]
+			});
+            
+            console.log('info =============>', salesOrderRequest)
+            
+			return res.end(
+				JSON.stringify({
+					response: 1,
+					message: Messages['en'].SUCCESS_FETCH, cart_id: salesOrderRequest.id
+				})
+			);
+		} catch (err) {
+			return res.end(
+				JSON.stringify({ response: 0, message: Messages["en"].ERROR_FETCH })
+			);
+		}
+	} else
+		return res.end(
+			JSON.stringify({ response: 2, message: Messages["en"].WRONG_DATA })
+		);
+
+}
 
 exports.customer_cart_supervisor_status = async function(req, res) {
 	// req.body = {
@@ -6542,19 +6653,58 @@ exports.exceed_limit_request_change_status_supervisor = async function(
 	console.log("input =============> ", req.body);
 	if (isAllValid(req.body.cart_id, req.body.status)) {
 		try {
-			const data = await Models.SalesOrderRequest.update(
+			const salesOrderRequest = await Models.SalesOrderRequest.update(
 				{ supervisor_status: req.body.status },
 				{
 					where: { id: req.body.cart_id }
 				}
 			);
-			return res.end(
-				JSON.stringify({
-					response: 1,
-					message: Messages["en"].SUCCESS_UPDATE,
-					result: data
-				})
-			);
+
+			// sending push notification
+			let notify_title = `Exceed Limit Request status`;
+			let notify_desc = "Exceed Limit Request " + req.body.status;
+			let gcm_req_type = "Exceed Limit Request";
+
+			let gcm_obj = {};
+
+			(gcm_obj.req_type = gcm_req_type), (gcm_obj.action = "request");
+			// try{
+			if (isAllValid(salesOrderRequest.employee_id)) {
+				console.log(
+					"employee_id ===================",
+					salesOrderRequest.employee_id
+				);
+
+				try {
+					const gcmDev = await Models.GcmDevices.findOne({
+						where: {
+							employee_id: salesOrderRequest.employee_id
+						}
+					});
+
+					console.log("employee_id sending notify", gcmDev);
+					if (gcmDev != null && gcmDev.device_token != null) {
+						console.log("push notification function ======================");
+						_sendPushNotificationAndroid(
+							gcmDev.device_token,
+							notify_title,
+							notify_desc,
+							gcm_obj
+						);
+					} else console.log("data is null in gcmDev supervisor");
+
+					console.log("sales order finish herehuhu =======================", 1);
+					return res.end(
+                        JSON.stringify({
+                            response: 1,
+                            message: Messages["en"].SUCCESS_UPDATE,
+                            result: salesOrderRequest
+                        })
+                    );
+				} catch (err) {
+					console.log("error in sending notification");
+				}
+			}
 		} catch (err) {
 			console.log(err);
 			return res.end(
@@ -9500,7 +9650,7 @@ exports.get_customer_bank_branch_drawers = function(req, res) {
 };
 
 exports.submit_payment = function(req, res) {
-	winston.log('info', "req body data ===================", req.body);
+	winston.log("info", "req body data ===================", req.body);
 	if (
 		req.body.user_id != null &&
 		req.body.user_id != "" &&
@@ -9520,7 +9670,7 @@ exports.submit_payment = function(req, res) {
 
 		if (req.body.payment_type == "cheque") {
 			if (req.files && req.files.image != "" && req.files.image != null) {
-				winston.log('info', "files ===========================");
+				winston.log("info", "files ===========================");
 				let image = req.files.image;
 				image_name =
 					Date.now() +
@@ -9551,7 +9701,7 @@ exports.submit_payment = function(req, res) {
 					}
 				);
 			}
-			winston.log('info', "req body under cheque =================", req.body);
+			winston.log("info", "req body under cheque =================", req.body);
 			Models.CustomerPayments.create({
 				user_id: req.body.user_id,
 				employee_id: req.body.employee_id,
@@ -9569,7 +9719,7 @@ exports.submit_payment = function(req, res) {
 				image: req.body.image ? req.body.image : null
 			}).then(
 				submitPaymentData => {
-					winston.log('debug', "success ===================");
+					winston.log("debug", "success ===================");
 
 					Models.Timelines.create({
 						content_id: submitPaymentData.id,
@@ -9585,14 +9735,17 @@ exports.submit_payment = function(req, res) {
 						longitude: req.body.longitude
 					}).then(
 						addTimeline => {
-							winston.log('info', "added timeline =====================");
+							winston.log("info", "added timeline =====================");
 							Models.Employees.findOne({
 								where: {
 									id: req.body.employee_id
 								}
 							}).then(
 								employeeData => {
-									winston.log('info', "under employee data =====================");
+									winston.log(
+										"info",
+										"under employee data ====================="
+									);
 
 									Models.Customers.findOne({
 										where: {
@@ -9600,13 +9753,18 @@ exports.submit_payment = function(req, res) {
 										}
 									}).then(
 										customerData => {
-											winston.log('info', "under customer data =====================");
+											winston.log(
+												"info",
+												"under customer data ====================="
+											);
 											let credit_amount;
-											winston.log('info', 
+											winston.log(
+												"info",
 												"req amount ===============",
 												req.body.amount
 											);
-											winston.log('info', 
+											winston.log(
+												"info",
 												"credit limit ===============",
 												customerData.credit_limit
 											);
@@ -9620,7 +9778,8 @@ exports.submit_payment = function(req, res) {
 											} else {
 												credit_amount = customerData.credit_limit;
 											}
-											winston.log('info', 
+											winston.log(
+												"info",
 												"credit amount ===============",
 												credit_amount
 											);
@@ -9633,68 +9792,97 @@ exports.submit_payment = function(req, res) {
 														id: req.body.customer_id
 													}
 												}
-                      )
-                      .then( updateLimit => {
-                        winston.log('info', 
-                          "under update limit ====================="
-                        );
-                        let gcm_obj = {};
-                        (gcm_obj.req_type = "payment"),
-                          (gcm_obj.action = "submit");
+											).then(
+												updateLimit => {
+													winston.log(
+														"info",
+														"under update limit ====================="
+													);
+													let gcm_obj = {};
+													(gcm_obj.req_type = "payment"),
+														(gcm_obj.action = "submit");
 
-                        if (
-                          submitPaymentData.supervisor_id != null &&
-                          submitPaymentData.supervisor_id != ""
-                        ) {
-                          winston.log('info', 
-                            "supervisor_id ===================",
-                            submitPaymentData.supervisor_id
-                          );
-                          Models.GcmDevices.findOne({
-                            where: {
-                              employee_id: submitPaymentData.supervisor_id
-                            }
-                          })
-                          .then( gcmDev => {
-                            winston.log('info', "supervisor_id sending notify", gcmDev);
-                            if ( gcmDev != null && gcmDev.device_token != null) {
-                              winston.log('info', "push notification function ======================");
-                              _sendPushNotificationAndroid(
-                                gcmDev.device_token,
-                                "Payment",
-                                "Payment is done via " +
-                                  submitPaymentData.payment_type +
-                                  " of " +
-                                  submitPaymentData.amount +
-                                  " by " +
-                                  employeeData.employee_name_en,
-                                gcm_obj
-                              );
-                            } 
-                            else {
-                              winston.log('warn', "data is null in gcmDev supervisor");
-                            }
-                          },
-                          error => {
-                            winston.log('error', "error in sending notification");
-                          })
-                        }
+													if (
+														submitPaymentData.supervisor_id != null &&
+														submitPaymentData.supervisor_id != ""
+													) {
+														winston.log(
+															"info",
+															"supervisor_id ===================",
+															submitPaymentData.supervisor_id
+														);
+														Models.GcmDevices.findOne({
+															where: {
+																employee_id: submitPaymentData.supervisor_id
+															}
+														}).then(
+															gcmDev => {
+																winston.log(
+																	"info",
+																	"supervisor_id sending notify",
+																	gcmDev
+																);
+																if (
+																	gcmDev != null &&
+																	gcmDev.device_token != null
+																) {
+																	winston.log(
+																		"info",
+																		"push notification function ======================"
+																	);
+																	_sendPushNotificationAndroid(
+																		gcmDev.device_token,
+																		"Payment",
+																		"Payment is done via " +
+																			submitPaymentData.payment_type +
+																			" of " +
+																			submitPaymentData.amount +
+																			" by " +
+																			employeeData.employee_name_en,
+																		gcm_obj
+																	);
+																} else {
+																	winston.log(
+																		"warn",
+																		"data is null in gcmDev supervisor"
+																	);
+																}
+															},
+															error => {
+																winston.log(
+																	"error",
+																	"error in sending notification"
+																);
+															}
+														);
+													}
 
-                        winston.log('info',
-                          "success insert ======================== "
-                        );
-                        res.end(
-                          JSON.stringify({
-                            response: 1,
-                            message: Messages["en"].SUCCESS_INSERT,
-                            result: submitPaymentData
-                          })
-                        );
-                      },
-                      error => {
-                        winston.log('error', "error ==================", error);
-                        res.end(JSON.stringify({ response: 0, message: Messages["en"].ERROR_CREATE }))
-                      })
+													winston.log(
+														"info",
+														"success insert ======================== "
+													);
+													res.end(
+														JSON.stringify({
+															response: 1,
+															message: Messages["en"].SUCCESS_INSERT,
+															result: submitPaymentData
+														})
+													);
+												},
+												error => {
+													winston.log(
+														"error",
+														"error ==================",
+														error
+													);
+													res.end(
+														JSON.stringify({
+															response: 0,
+															message: Messages["en"].ERROR_CREATE
+														})
+													);
+												}
+											);
 										},
 										error => {
 											res.end(
@@ -9717,23 +9905,32 @@ exports.submit_payment = function(req, res) {
 							);
 						},
 						error => {
-							winston.log('error', "error in add timeline", error);
-							res.end(JSON.stringify({ response: 0, message: Messages["en"].SOMETHING_WRONG }));
+							winston.log("error", "error in add timeline", error);
+							res.end(
+								JSON.stringify({
+									response: 0,
+									message: Messages["en"].SOMETHING_WRONG
+								})
+							);
 						}
 					);
 				},
 				error => {
-					winston.log('error', "error ===================", error);
-					res.end(JSON.stringify({ response: 0, message: Messages["en"].ERROR_CREATE }))
+					winston.log("error", "error ===================", error);
+					res.end(
+						JSON.stringify({
+							response: 0,
+							message: Messages["en"].ERROR_CREATE
+						})
+					);
 				}
 			);
-    } 
-    else {
+		} else {
 			req.body.reference_no =
 				"RF_" + Date.now() + "_" + Math.floor(10000 + Math.random() * 90000);
 			req.body.payment_no =
 				"PN_" + Date.now() + "_" + Math.floor(10000 + Math.random() * 90000);
-			winston.log('info', "req body under cash =================", req.body);
+			winston.log("info", "req body under cash =================", req.body);
 			Models.CustomerPayments.create({
 				user_id: req.body.user_id,
 				employee_id: req.body.employee_id,
@@ -9750,7 +9947,7 @@ exports.submit_payment = function(req, res) {
 				note: req.body.note ? req.body.note : null
 			}).then(
 				submitPaymentData => {
-					winston.log('info', "success cash payment ===================");
+					winston.log("info", "success cash payment ===================");
 
 					Models.Timelines.create({
 						content_id: submitPaymentData.id,
@@ -9805,7 +10002,8 @@ exports.submit_payment = function(req, res) {
 														submitPaymentData.supervisor_id != null &&
 														submitPaymentData.supervisor_id != ""
 													) {
-														winston.log('info', 
+														winston.log(
+															"info",
 															"supervisor_id ===================",
 															submitPaymentData.supervisor_id
 														);
@@ -9815,7 +10013,8 @@ exports.submit_payment = function(req, res) {
 															}
 														}).then(
 															gcmDev => {
-																winston.log('info',
+																winston.log(
+																	"info",
 																	"supervisor_id sending notify",
 																	gcmDev
 																);
@@ -9823,7 +10022,8 @@ exports.submit_payment = function(req, res) {
 																	gcmDev != null &&
 																	gcmDev.device_token != null
 																) {
-																	winston.log('info',
+																	winston.log(
+																		"info",
 																		"push notification function ======================"
 																	);
 																	_sendPushNotificationAndroid(
@@ -9838,13 +10038,17 @@ exports.submit_payment = function(req, res) {
 																		gcm_obj
 																	);
 																} else {
-																	winston.log('warn',
+																	winston.log(
+																		"warn",
 																		"data is null in gcmDev supervisor"
 																	);
 																}
 															},
 															error => {
-																winston.log('error', "error in sending notification");
+																winston.log(
+																	"error",
+																	"error in sending notification"
+																);
 															}
 														);
 													}
@@ -9888,7 +10092,7 @@ exports.submit_payment = function(req, res) {
 							);
 						},
 						error => {
-							winston.log('error', "error in add timeline", error);
+							winston.log("error", "error in add timeline", error);
 							res.end(
 								JSON.stringify({
 									response: 0,
@@ -9899,7 +10103,7 @@ exports.submit_payment = function(req, res) {
 					);
 				},
 				error => {
-					winston.log('error', "error cash payment ===================", error);
+					winston.log("error", "error cash payment ===================", error);
 					res.end(
 						JSON.stringify({
 							response: 0,
@@ -10091,7 +10295,11 @@ exports.timeline_for_specific_customer = function(req, res) {
 		req.body.customer_id != null &&
 		req.body.customer_id != ""
 	) {
-		winston.log('info', "specific under if =========================", req.body);
+		winston.log(
+			"info",
+			"specific under if =========================",
+			req.body
+		);
 		Models.Timelines.findAll({
 			where: {
 				user_id: req.body.user_id,
@@ -10149,7 +10357,11 @@ exports.timeline_for_specific_customer = function(req, res) {
 			order: [["id", "DESC"]]
 		}).then(
 			timelineData => {
-				winston.log('info', "specific success =====================", timelineData);
+				winston.log(
+					"info",
+					"specific success =====================",
+					timelineData
+				);
 				res.end(
 					JSON.stringify({
 						response: 1,
