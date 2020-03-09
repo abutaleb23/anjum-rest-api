@@ -63,9 +63,9 @@ var fcm = new FCM(serverKey);
 // });
 
 /*paths defined*/
-const LOCAL_PUBLIC_PATH = "/var/www/html/anjum/public/";
-const GLOBAL_PUBLIC_PATH = "http://18.220.206.74/anjum/public/";
-const WEBSITE_PATH = "http://18.220.206.74/anjum/";
+const LOCAL_PUBLIC_PATH = "/var/www/anjum/public/";
+const GLOBAL_PUBLIC_PATH = "http://18.220.206.74/public/";
+const WEBSITE_PATH = "http://18.220.206.74/";
 const FRONT_IMGS = "imgs/admin/";
 const BACK_IMGS = "imgs/frontend/";
 const LOCAL_IMAGES_URL = LOCAL_PUBLIC_PATH + BACK_IMGS;
@@ -1204,7 +1204,7 @@ exports.add_photo_during_visit = function(req, res) {
 					res.end(
 						JSON.stringify({
 							response: 0,
-							message: messages.ERROR_FETCH
+							message: Messages['en'].ERROR_FETCH
 						})
 					);
 				}
@@ -13108,7 +13108,7 @@ function _uploadImage(obj, image_name, extra, callback) {
 	obj.mv(image_name, function(cert_err) {
 		console.log("result", cert_err);
 		if (cert_err) {
-			callback("error", err, "");
+			callback("error", cert_err, "");
 		} else {
 			callback("success", "", extra);
 		}
