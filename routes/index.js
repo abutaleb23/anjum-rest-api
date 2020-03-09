@@ -9661,22 +9661,7 @@ exports.get_customer_bank_branch_drawers = function(req, res) {
 
 exports.submit_payment = function(req, res) {
 	winston.log("info", "req body data ===================", req.body);
-	if (
-		req.body.user_id != null &&
-		req.body.user_id != "" &&
-		req.body.employee_id != null &&
-		req.body.employee_id != "" &&
-		req.body.customer_id != null &&
-		req.body.customer_id != "" &&
-		req.body.payment_type != null &&
-		req.body.payment_type != ""
-	) {
-		// if (req.body.payment_type=="cash") {
-		// 	req.body.cheque_no=null;
-		// 	req.body.due_date=null;
-		// 	req.body.note=null;
-		// 	req.body.image=null;
-		// }
+	if ( isAllValid(req.body.user_id && req.body.employee_id && req.body.customer_id && req.body.payment_type && req.body.salesmanager_id)) {
 
 		if (req.body.payment_type == "cheque") {
 			if (req.files && req.files.image != "" && req.files.image != null) {
@@ -9729,7 +9714,7 @@ exports.submit_payment = function(req, res) {
 				image: req.body.image ? req.body.image : null
 			}).then(
 				submitPaymentData => {
-					winston.log("debug", "success ===================");
+					winston.log("info", "success ===================");
 
 					Models.Timelines.create({
 						content_id: submitPaymentData.id,
