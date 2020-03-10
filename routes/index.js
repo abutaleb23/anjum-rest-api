@@ -6456,19 +6456,21 @@ exports.customer_get_latest_cart_id = async function(req, res){
 	//     "sales_order_promotions_arr":[]
 	//   }]
 	// }
-
+ 
     console.log("Input ============>", req.body);
 
     const { user_id, employee_id, customer_id, supervisor_id } = req.body 
     
     if (isAllValid( user_id, employee_id, customer_id, supervisor_id)) {
+        const is_successfully_submitted = 0;
 		try {
 			const salesOrderRequest = await Models.SalesOrderRequest.findOne({
 				where: {
                     user_id, 
                     employee_id,
                     customer_id,
-                    supervisor_id
+                    supervisor_id,
+                    is_successfully_submitted,
                 },
                 order: [["id", "DESC"]]
 			});
@@ -7077,7 +7079,8 @@ exports.sales_order_request_submit = async function(req, res) {
       or exceed limit rquest has been accepted
     */
 
-		create_sales.supervisor_status = "accepted";
+        create_sales.supervisor_status = "accepted";
+        create_sales.is_successfully_submitted = 1;
 		create_sales.total_price_without_tax_discount =
 			req.body.total_price_without_tax_discount;
 		create_sales.total_tax = req.body.total_tax;

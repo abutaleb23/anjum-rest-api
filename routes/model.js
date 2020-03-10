@@ -655,7 +655,8 @@ exports.SalesOrderRequest = sequelize.define("sales_order_requests", {
 	salesmanager_status: {
 		type: Sequelize.ENUM("NA", "pending", "accepted", "rejected")
 	},
-	supervisor_status: { type: Sequelize.ENUM("pending", "accepted") },
+    supervisor_status: { type: Sequelize.ENUM("pending", "accepted") },
+    is_successfully_submitted: { type: Sequelize.TINYINT },
 	created_at: { type: Sequelize.DATE },
 	updated_at: { type: Sequelize.DATE }
 });
@@ -692,7 +693,7 @@ exports.SalesOrderRequestDetail = sequelize.define(
 		total_tax: { type: Sequelize.DOUBLE },
 		tax_type: { type: Sequelize.ENUM("value", "percentage", "NA") },
 		total_price_with_tax: { type: Sequelize.DOUBLE },
-		request_status: { type: Sequelize.ENUM("pending", "accepted", "rejected") },
+        request_status: { type: Sequelize.ENUM("pending", "accepted", "rejected") },
 		created_at: { type: Sequelize.DATE }
 	}
 );
