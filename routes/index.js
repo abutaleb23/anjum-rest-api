@@ -1204,7 +1204,7 @@ exports.add_photo_during_visit = function(req, res) {
 					res.end(
 						JSON.stringify({
 							response: 0,
-							message: Messages['en'].ERROR_FETCH
+							message: Messages["en"].ERROR_FETCH
 						})
 					);
 				}
@@ -5497,15 +5497,8 @@ exports.customer_payment_method = function(req, res) {
 	//   };
 	console.log(req.body);
 	const { user_id, customer_id } = req.body;
-	const { error } = schema.customer_payment_method_schema.validate({
-		user_id,
-		customer_id
-	});
-
-	if (error)
-		return res.end(
-			JSON.stringify({ response: 2, message: Messages["en"].WRONG_DATA })
-		);
+	if( !isAllValid(user_id, customer_id) ) return res.end(JSON.stringify({ response: 2, message: Messages["en"].WRONG_DATA }) );
+		
 	Models.Customers.findOne({
 		where: {
 			user_id: user_id,
@@ -6421,8 +6414,8 @@ exports.customer_take_supervisor_permission = async function(req, res) {
 		);
 };
 
-exports.customer_get_latest_cart_id = async function(req, res){
-    // req.body = {
+exports.customer_get_latest_cart_id = async function(req, res) {
+	// req.body = {
 	//   "cart_id": "16",
 	//   "user_id":"12",
 	//   "payment_type":"credit",
@@ -6456,31 +6449,32 @@ exports.customer_get_latest_cart_id = async function(req, res){
 	//     "sales_order_promotions_arr":[]
 	//   }]
 	// }
- 
-    console.log("Input ============>", req.body);
 
-    const { user_id, employee_id, customer_id, supervisor_id } = req.body 
-    
-    if (isAllValid( user_id, employee_id, customer_id, supervisor_id)) {
-        const is_successfully_submitted = 0;
+	console.log("Input ============>", req.body);
+
+	const { user_id, employee_id, customer_id, supervisor_id } = req.body;
+
+	if (isAllValid(user_id, employee_id, customer_id, supervisor_id)) {
+		const is_successfully_submitted = 0;
 		try {
 			const salesOrderRequest = await Models.SalesOrderRequest.findOne({
 				where: {
-                    user_id, 
-                    employee_id,
-                    customer_id,
-                    supervisor_id,
-                    is_successfully_submitted,
-                },
-                order: [["id", "DESC"]]
+					user_id,
+					employee_id,
+					customer_id,
+					supervisor_id,
+					is_successfully_submitted
+				},
+				order: [["id", "DESC"]]
 			});
-            
-            console.log('info =============>', salesOrderRequest)
-            
+
+			console.log("info =============>", salesOrderRequest);
+
 			return res.end(
 				JSON.stringify({
 					response: 1,
-					message: Messages['en'].SUCCESS_FETCH, cart_id: salesOrderRequest.id
+					message: Messages["en"].SUCCESS_FETCH,
+					cart_id: salesOrderRequest.id
 				})
 			);
 		} catch (err) {
@@ -6492,8 +6486,7 @@ exports.customer_get_latest_cart_id = async function(req, res){
 		return res.end(
 			JSON.stringify({ response: 2, message: Messages["en"].WRONG_DATA })
 		);
-
-}
+};
 
 exports.customer_cart_supervisor_status = async function(req, res) {
 	// req.body = {
@@ -6660,16 +6653,19 @@ exports.exceed_limit_request_change_status_supervisor = async function(
 				{
 					where: { id: req.body.cart_id }
 				}
-            );
-            console.log('updated================>')
+			);
+			console.log("updated================>");
 
-            const salesOrderRequest = await Models.SalesOrderRequest.findOne({
-                where:{
-                    id: req.body.cart_id
-                }
-            })
+			const salesOrderRequest = await Models.SalesOrderRequest.findOne({
+				where: {
+					id: req.body.cart_id
+				}
+			});
 
-            console.log('salesOrderRequest ====================> ', salesOrderRequest)
+			console.log(
+				"salesOrderRequest ====================> ",
+				salesOrderRequest
+			);
 			// sending push notification
 			let notify_title = `Exceed Limit Request status`;
 			let notify_desc = "Exceed Limit Request " + req.body.status;
@@ -6705,18 +6701,16 @@ exports.exceed_limit_request_change_status_supervisor = async function(
 
 					console.log("sales order finish herehuhu =======================", 1);
 					return res.end(
-                        JSON.stringify({
-                            response: 1,
-                            message: Messages["en"].SUCCESS_UPDATE,
-                            result: salesOrderRequest
-                        })
-                    );
-                } 
-                catch (err) {
-                    console.log("error in sending notification");
+						JSON.stringify({
+							response: 1,
+							message: Messages["en"].SUCCESS_UPDATE,
+							result: salesOrderRequest
+						})
+					);
+				} catch (err) {
+					console.log("error in sending notification");
 				}
-            }
-            
+			}
 		} catch (err) {
 			console.log(err);
 			return res.end(
@@ -7079,8 +7073,8 @@ exports.sales_order_request_submit = async function(req, res) {
       or exceed limit rquest has been accepted
     */
 
-        create_sales.supervisor_status = "accepted";
-        create_sales.is_successfully_submitted = 1;
+		create_sales.supervisor_status = "accepted";
+		create_sales.is_successfully_submitted = 1;
 		create_sales.total_price_without_tax_discount =
 			req.body.total_price_without_tax_discount;
 		create_sales.total_tax = req.body.total_tax;
@@ -9664,8 +9658,15 @@ exports.get_customer_bank_branch_drawers = function(req, res) {
 
 exports.submit_payment = function(req, res) {
 	winston.log("info", "req body data ===================", req.body);
-	if ( isAllValid(req.body.user_id && req.body.employee_id && req.body.customer_id && req.body.payment_type && req.body.salesmanager_id)) {
-
+	if (
+		isAllValid(
+			req.body.user_id &&
+				req.body.employee_id &&
+				req.body.customer_id &&
+				req.body.payment_type &&
+				req.body.salesmanager_id
+		)
+	) {
 		if (req.body.payment_type == "cheque") {
 			if (req.files && req.files.image != "" && req.files.image != null) {
 				winston.log("info", "files ===========================");
