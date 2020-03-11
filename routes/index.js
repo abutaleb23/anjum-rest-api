@@ -5496,17 +5496,15 @@ exports.customer_payment_method = function(req, res) {
 	// 		"customer_id": "88",
 	//   };
 	console.log(req.body);
-	const { user_id, customer_id } = req.body;
-	if( !isAllValid(user_id, customer_id) ) return res.end(JSON.stringify({ response: 2, message: Messages["en"].WRONG_DATA }) );
-		
+	const { customer_id } = req.body;
+    if( !isAllValid(customer_id) ) return res.end(JSON.stringify({ response: 2, message: Messages["en"].WRONG_DATA }) );
+    
 	Models.Customers.findOne({
 		where: {
-			user_id: user_id,
-			customer_id: customer_id
+			id: customer_id
 		}
 	})
 		.then(customer => {
-			console.log("debug: ", customer);
 			res.end(
 				JSON.stringify({
 					response: 1,
@@ -6971,6 +6969,8 @@ exports.sales_order_request_submit = async function(req, res) {
        # if rejected, then present cart_total_price is same, don't let him do for successful submission
        # if accepted, then present cart_total_price is same, let him do for successfull submission
     */
+        let is_rejected = 0;
+
 		if (isAllValid(req.body.cart_id)) {
 			// if not valid, that means, there are no cart id
 			try {
@@ -6978,7 +6978,8 @@ exports.sales_order_request_submit = async function(req, res) {
 					where: {
 						id: req.body.cart_id
 					}
-				});
+                });
+                if(!oldCart) is_rejected = 1;
 				console.log("old cart==============================>", oldCart);
 				if (isAllValid(oldCart) && oldCart.supervisor_status == "pending")
 					return res.end(
@@ -7010,7 +7011,7 @@ exports.sales_order_request_submit = async function(req, res) {
 
       # there is no cart_id, means this is the first submit of the cart
     */
-		if (!isAllValid(req.body.cart_id)) {
+		if (!isAllValid(req.body.cart_id) || is_rejected) {
 			try {
 				const customer = await Models.Customers.findOne({
 					where: {
