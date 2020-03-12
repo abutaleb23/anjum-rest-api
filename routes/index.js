@@ -6972,7 +6972,7 @@ exports.sales_order_request_submit = async function(req, res) {
     */
         let is_rejected = 0;
 
-		if (isAllValid(req.body.cart_id)) {
+		if (isAllValid(req.body.cart_id) && req.body.request_type == 'invoice') {
 			// if not valid, that means, there are no cart id
 			try {
 				const oldCart = await Models.SalesOrderRequest.findOne({
@@ -7012,7 +7012,7 @@ exports.sales_order_request_submit = async function(req, res) {
 
       # there is no cart_id, means this is the first submit of the cart
     */
-		if (!isAllValid(req.body.cart_id) || is_rejected) {
+		if ( (!isAllValid(req.body.cart_id) || is_rejected) && req.body.request_type == 'invoice' ) {
 			try {
 				const customer = await Models.Customers.findOne({
 					where: {
