@@ -9695,7 +9695,7 @@ exports.submit_payment = function(req, res) {
 							res.end(
 								JSON.stringify({
 									response: 0,
-									message: messages.ERROR_FETCH
+									message: Messages['en'].ERROR_FETCH
 								})
 							);
 						}
