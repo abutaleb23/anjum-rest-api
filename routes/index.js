@@ -6451,7 +6451,7 @@ exports.customer_get_latest_cart_id = async function(req, res) {
 	console.log("Input ============>", req.body);
 
 	const { user_id, employee_id, customer_id, supervisor_id } = req.body;
-
+    const request_type = 'invoice'
 	if (isAllValid(user_id, employee_id, customer_id, supervisor_id)) {
 		const is_successfully_submitted = 0;
 		try {
@@ -6460,7 +6460,8 @@ exports.customer_get_latest_cart_id = async function(req, res) {
 					user_id,
 					employee_id,
 					customer_id,
-					supervisor_id,
+                    supervisor_id,
+                    request_type,
 					is_successfully_submitted
 				},
 				order: [["id", "DESC"]]
