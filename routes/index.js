@@ -5535,6 +5535,15 @@ exports.supervisor_view_salesman_exceed_limit_products = async function(
 		)
 	) {
 		try {
+
+            const result = await Models.Customers.findOne({
+                where: {
+                    id: req.body.customer_id
+                }
+            })
+
+            console.log('Got the customer information ===============>', result)
+
 			const data = await Models.SalesOrderCartDetail.findAll({
 				where: {
 					user_id: req.body.user_id,
@@ -5561,7 +5570,15 @@ exports.supervisor_view_salesman_exceed_limit_products = async function(
 						]
 					}
 				]
-			});
+            });
+
+            console.log('again printing ==========>', data[0])
+
+            data[0].dataValues.customer_name_en = result.customer_name_en
+            data[0].dataValues.customer_name_ar = result.customer_name_ar
+            data[0].dataValues.credit_limit = result.credit_limit
+            
+            console.log('printing============>', data)
 			return res.end(
 				JSON.stringify({
 					response: 1,
