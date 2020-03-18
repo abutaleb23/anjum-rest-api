@@ -9094,7 +9094,7 @@ exports.get_single_promotion_item_detail = function(req, res) {
 };
 
 exports.promotion_output_items_details = function(req, res) {
-	if (req.body.promotion_id != null && req.body.promotion_id != "") {
+	if ( (req.body.promotion_id != null && req.body.promotion_id != "") || req.body.promotion_id === 0) {
 		let where_cond = {};
 		where_cond.qty_promotion_id = req.body.promotion_id;
 		console.log("output item request =====================", req.body);
