@@ -7429,7 +7429,7 @@ exports.sales_order_request_submit = async function(req, res) {
 											return res.end(
 												JSON.stringify({
 													response: 2,
-													message: Messages["en"].WRONG_DATA
+													message: `No quantity available for bonus. There are ${stockItemData.quantity} items in stock for ${promotions_data[j].promotion_bonus_item_id} product`
 												})
 											);
 										}
