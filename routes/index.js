@@ -9093,69 +9093,158 @@ exports.get_single_promotion_item_detail = function(req, res) {
 	}
 };
 
-exports.promotion_output_items_details = function(req, res) {
-	if ( (req.body.promotion_id != null && req.body.promotion_id != "") || req.body.promotion_id === 0) {
-		let where_cond = {};
-		where_cond.qty_promotion_id = req.body.promotion_id;
-		console.log("output item request =====================", req.body);
-		Models.OutputQuantityPromotionItems.findAll({
-			where: where_cond,
-			include: [
-				{
-					model: Models.Items,
-					as: "item_detail_in_output_quantity_promotion_items"
-				},
-				{
-					model: Models.MeasurementUnit,
-					as: "measurement_unit_in_output_quantity_promotion_items"
-				},
-				{
-					model: Models.Promotions,
-					as: "output_quantity_promotion_details"
-				}
-			]
-		}).then(
-			allPromotionItems => {
-				if (allPromotionItems.length > 0) {
-					console.log(
-						"success ----------------------------------",
-						allPromotionItems
-					);
-					res.end(
-						JSON.stringify({
-							response: 1,
-							message: Messages["en"].SUCCESS_FETCH,
-							result: allPromotionItems
-						})
-					);
-				} else {
-					res.end(
-						JSON.stringify({
-							response: 3,
-							message: Messages["en"].EMPTY_DATA
-						})
-					);
-				}
-			},
-			error => {
-				console.log("!--------! promotions fetch error !--------!", error);
-				res.end(
-					JSON.stringify({
-						response: 0,
-						message: Messages["en"].ERROR_FETCH
-					})
-				);
-			}
-		);
-	} else {
-		res.end(
-			JSON.stringify({
-				response: 2,
-				message: Messages["en"].WRONG_DATA
-			})
-		);
-	}
-};
+exports.promotion_output_items_details = async function(req, res) {
+    // req.body = {
+    //     "promotion_ids": ["145", "146", "147"],
+    //     "salesman_id": "12", // here salesman_id is employee_id
+    //     "customer_id": "15",
+    // }
+    console.log('Input ================>', req.body)
+    const { salesman_id, customer_id } = req.body
+    let promotions_ids = req.body.promotions_ids
+
+    if(!(salesman_id && customer_id)) return res.end(JSON.stringify({ response: 0, message: Messages['en'].WRONG_DATA}))
+
+    
+    if (!Array.isArray(req.body.promotions_ids)) promotions_ids = [req.body.promotions_ids];
+    // console.log(salesman_id, " ", customer_id, " ", promotions_ids)
+    
+    const len_of_promotions = promotions_ids.length
+
+    const total_response = []
+    console.log(promotions_ids," ", len_of_promotions)
+    for(let i=0; i<len_of_promotions; i++){
+      const promotion_id = promotions_ids[i];
+      if(promotion_id) {
+        console.log('promotion id', promotion_id)
+        console.log(i)
+        /*
+          1. take salesman_group_id and customer_group_id, invoice_per_salesman and invoice_per_customer from promotions table
+          2. check employee_id and salesman_group_id is in promotions_salesman_group_assign_salesman
+          3. check customer_id and group_id is in promotions_customers_group_customers
+          4. if 2 and 3 is null wrong promotion_id for them
+          5. else check invoice_limit from promotions_salesman_invoice_limit table with promotion_id, salesman_id
+          6. similarly check invoice limit from promotions_customer_invoice_limit table with promotion_id, customer_id 
+          7. if any of 5, 6 is false, wrong promotion_id for them
+          8.  now this employee and customer has this promotion which is stored in 
+          output_quantity_promotion_item
+          5. each response will be attacted to the total responses
+        */
+
+        try{
+          const promotionResult = await Models.Promotions.findOne({
+            where: {
+              id: promotion_id
+            }
+          })
+          console.log('Promotion row ================>', promotionResult)
+          if(promotionResult == null) continue
+
+          const promotionSalesmanGroup = await Models.PromotionsSalesmanGroupAssignSalesmans.findOne({
+            where:{
+              group_id: promotionResult.dataValues.salesman_group_id,
+              employee_id: salesman_id
+            }
+          })
+          console.log('Promotion salesman group assign salesman', promotionSalesmanGroup)
+
+          const promotionCustomerGroup = await Models.PromotionsCustomersGroupCustomers.findOne({
+            where:{
+              group_id: promotionResult.dataValues.customer_group_id,
+              customer_id: customer_id
+            }
+          })
+          console.log('Promotions customer group customer', promotionCustomerGroup)
+
+          if(promotionSalesmanGroup == null && promotionCustomerGroup == null) continue
+          
+
+          const salesmanInvoiceLimit = await Models.PromotionsSalesmanInvoiceLimits.findOne({
+            where: {
+              promotion_id: promotion_id,
+              salesman_id: salesman_id
+            }
+          })
+
+          console.log("invoice limit for salesman", salesmanInvoiceLimit)
+
+
+          const customerInvoiceLimit = await Models.PromotionsCustomerInvoiceLimits.findOne({
+            where: {
+              promotion_id: promotion_id,
+              customer_id: customer_id
+            }
+          })
+
+          console.log('invoice limit for custoemr', customerInvoiceLimit)
+
+          /*
+            1. if salesman invoice limit is null, I have to store the invoice per limit to this table
+            2. else check whether this promotion is valid for this salesman
+            3. same for customer
+          */
+
+          if(salesmanInvoiceLimit == null) {
+            await Models.PromotionsSalesmanInvoiceLimits.create({
+              promotion_id: promotion_id,
+              salesman_id: salesman_id,
+              invoice_limit: 0
+            })
+            console.log('stored salesman promotion invoice limit data to invoice limit')
+          }
+          else if(promotionResult.dataValues.invoice_per_salesman != -1 && salesmanInvoiceLimit.dataValues.invoice_limit >= promotionResult.dataValues.invoice_per_salesman){
+            continue
+          }
+
+          if(customerInvoiceLimit == null){
+            await Models.PromotionsCustomerInvoiceLimits.create({
+              promotion_id: promotion_id,
+              customer_id: customer_id,
+              invoice_limit: 0
+            })
+            console.log('Stored customer promotion invoice limit data to invoice limit')
+          }
+          else if(promotionResult.dataValues.invoice_per_customer != -1 && customerInvoiceLimit.dataValues.invoice_limit >= promotionResult.dataValues.invoice_per_customer){
+            continue
+          }
+          
+          // all cases are solved. now I have to attach the response
+          const where_cond = {};
+          where_cond.qty_promotion_id = promotion_id
+
+          const allPromotionItems = await Models.OutputQuantityPromotionItems.findAll({
+            where: where_cond,
+            include: [
+              {
+                model: Models.Items,
+                as: "item_detail_in_output_quantity_promotion_items"
+              },
+              {
+                model: Models.MeasurementUnit,
+                as: "measurement_unit_in_output_quantity_promotion_items"
+              },
+              {
+                model: Models.Promotions,
+                as: "output_quantity_promotion_details"
+              }
+            ]
+          })
+          console.log("success ----------------------------------", allPromotionItems);
+          if (allPromotionItems.length > 0) {
+            console.log("success ----------------------------------",allPromotionItems);
+            total_response.push(allPromotionItems)
+          } 
+          if(i==len_of_promotions-1) return res.end(JSON.stringify({ response: 1, message: Messages["en"].SUCCESS_FETCH, result: total_response}));
+        }
+        catch(err){
+          console.log('printing error==========> ', i, " ", err)
+        }
+      }
+      else{
+        if(i==len_of_promotions-1) return res.end(JSON.stringify({ response: 1, message: Messages["en"].SUCCESS_FETCH, result: total_response}));
+      }
+    }
+}
 
 exports.get_store_stock_list = function(req, res) {
 	if (

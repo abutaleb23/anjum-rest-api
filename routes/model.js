@@ -742,7 +742,9 @@ exports.Promotions = sequelize.define("promotions", {
 	strictly_listed_item: { type: Sequelize.ENUM("yes", "no") },
 	// double_bonus:{type:Sequelize.ENUM('yes','no')},
 	discount: { type: Sequelize.DOUBLE },
-	discount_type: { type: Sequelize.ENUM("percentage", "value") },
+    discount_type: { type: Sequelize.ENUM("percentage", "value") },
+    salesman_group_id: { type: Sequelize.STRING },
+    customer_group_id: { type: Sequelize.STRING },
 	invoice_per_salesman: { type: Sequelize.STRING },
 	invoice_per_customer: { type: Sequelize.STRING },
 	status: { type: Sequelize.ENUM("active", "inactive") },
@@ -988,6 +990,43 @@ exports.GcmDevices = sequelize.define("gcm_devices", {
 	employee_id: { type: Sequelize.INTEGER },
 	device_id: { type: Sequelize.STRING },
 	device_token: { type: Sequelize.STRING },
+	created_at: { type: Sequelize.DATE },
+	updated_at: { type: Sequelize.DATE }
+});
+
+/*
+    made by Habibur Rahman
+
+*/
+
+exports.PromotionsSalesmanGroupAssignSalesmans = sequelize.define("promotions_salesman_group_assign_salesmans", {
+	user_id: { type: Sequelize.INTEGER },
+	group_id: { type: Sequelize.INTEGER },
+	employee_id: { type: Sequelize.INTEGER },
+	created_at: { type: Sequelize.DATE },
+	updated_at: { type: Sequelize.DATE }
+});
+
+exports.PromotionsCustomersGroupCustomers = sequelize.define("promotions_customers_group_customers", {
+	user_id: { type: Sequelize.INTEGER },
+	group_id: { type: Sequelize.INTEGER },
+	customer_id: { type: Sequelize.INTEGER },
+	created_at: { type: Sequelize.DATE },
+	updated_at: { type: Sequelize.DATE }
+});
+
+exports.PromotionsSalesmanInvoiceLimits = sequelize.define("promotions_salesman_invoice_limits", {
+	promotion_id: { type: Sequelize.INTEGER },
+	salesman_id: { type: Sequelize.INTEGER },
+	invoice_limit: { type: Sequelize.INTEGER },
+	created_at: { type: Sequelize.DATE },
+	updated_at: { type: Sequelize.DATE }
+});
+
+exports.PromotionsCustomerInvoiceLimits = sequelize.define("promotions_customer_invoice_limits", {
+	promotion_id: { type: Sequelize.INTEGER },
+	customer_id: { type: Sequelize.INTEGER },
+	invoice_limit: { type: Sequelize.INTEGER },
 	created_at: { type: Sequelize.DATE },
 	updated_at: { type: Sequelize.DATE }
 });
