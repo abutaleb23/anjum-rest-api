@@ -9232,16 +9232,16 @@ exports.promotion_output_items_details = async function(req, res) {
           console.log("success ----------------------------------", allPromotionItems);
           if (allPromotionItems.length > 0) {
             console.log("success ----------------------------------",allPromotionItems);
-            total_response.push(allPromotionItems)
+            total_response.push({ products: allPromotionItems })
           } 
-          if(i==len_of_promotions-1) return res.end(JSON.stringify({ response: 1, message: Messages["en"].SUCCESS_FETCH, result: total_response}));
+          if(i==len_of_promotions-1) return res.end(JSON.stringify({ response: 1, message: Messages["en"].SUCCESS_FETCH, promotions: total_response}));
         }
         catch(err){
           console.log('printing error==========> ', i, " ", err)
         }
       }
       else{
-        if(i==len_of_promotions-1) return res.end(JSON.stringify({ response: 1, message: Messages["en"].SUCCESS_FETCH, result: total_response}));
+        if(i==len_of_promotions-1) return res.end(JSON.stringify({ response: 1, message: Messages["en"].SUCCESS_FETCH, promotions: total_response}));
       }
     }
 }
