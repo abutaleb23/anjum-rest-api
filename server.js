@@ -162,7 +162,11 @@ app.post('/employee/promo/allPromotionsAccordingToItem', routes.all_promotions_a
 app.post('/employee/promo/itemsAccordingToRangePromotions', routes.items_according_to_range_promotion);
 app.post('/employee/promo/getSinglePromotionItemDetail', routes.get_single_promotion_item_detail);
 app.post('/employee/promo/quantityValueAccordingToItem', routes.quantity_value_according_to_item);
+// developed by Habibur Rahman
 app.post('/employee/promo/promotionOutputItemsDetails', routes.promotion_output_items_details);
+app.post('/employee/promo/promotionDiscountPercentageDetails', routes.promotion_discount_percentage_details);
+app.post('/employee/promo/promotionDiscountAmountDetails', routes.promotion_discount_amount_details);
+
 //promotion section end
 app.post('/employee/saveFcmToken', routes.save_fcm_token);
 app.post('/employee/removeFcmToken', routes.remove_fcm_token);
