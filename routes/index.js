@@ -6830,7 +6830,7 @@ exports.sales_order_request_submit = async function(req, res) {
 	let sale_req_detail;
 	let cart_data;
 	let promotions_data;
-	console.log("sales order request submit ===========");
+	
 	// req.body = {
 	// 	"user_id": "7",
 	// 	"employee_id": "13",
@@ -6966,7 +6966,8 @@ exports.sales_order_request_submit = async function(req, res) {
 	// 			"measurement_unit_id": 23
 	// 		}]
 	// 	}]
-	// };
+    // };
+    console.log("sales order request submit ===========");
 	console.log(req.body);
 
 	if (
@@ -7235,10 +7236,8 @@ exports.sales_order_request_submit = async function(req, res) {
 						create_sales_req.bonus = sales_order_arr[i].bonus;
 					else create_sales_req.bonus = 0;
 
-					console.log(
-						"prom length====================",
-						sale_req_detail.sales_order_promotions_arr
-					);
+          console.log("prom length====================",sale_req_detail.sales_order_promotions_arr);
+          if(!Array.isArray(sale_req_detail.sales_order_promotions_arr)) sale_req_detail.sales_order_promotions_arr = []
 
 					/*
             1. if request type is invoice,
@@ -7315,7 +7314,8 @@ exports.sales_order_request_submit = async function(req, res) {
 							console.log(
 								"sales order invoice request stock items created =================="
 							);
-						} catch (err) {
+            } 
+            catch (err) {
 							console.log(
 								"error in stock item quantity update =================="
 							);
@@ -7345,10 +7345,8 @@ exports.sales_order_request_submit = async function(req, res) {
 							requestData.id
 						);
 						if (sale_req_detail.sales_order_promotions_arr.length > 0) {
-							console.log(
-								"if promo data  -----------------------------",
-								sale_req_detail.sales_order_promotions_arr
-							);
+              console.log("if promo data  -----------------------------",sale_req_detail.sales_order_promotions_arr)
+
 							for (
 								let j = 0;
 								j < sale_req_detail.sales_order_promotions_arr.length;
@@ -7422,8 +7420,8 @@ exports.sales_order_request_submit = async function(req, res) {
 										});
 
 										if (
-											stockItemData.quantity <
-											promotions_data[j].promotion_bonus_quantity
+											parseInt(stockItemData.quantity) <
+											parseInt(promotions_data[j].promotion_bonus_quantity)
 										) {
 											console.log("promotion maximum quantity exceeded");
 											return res.end(
@@ -7648,7 +7646,8 @@ exports.sales_order_request_submit = async function(req, res) {
 								);
 							}
 						}
-					} catch (err) {
+          } 
+          catch (err) {
 						console.log(
 							"********** error in sales order request detail add ************",
 							err
