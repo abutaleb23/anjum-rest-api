@@ -9093,11 +9093,79 @@ exports.get_single_promotion_item_detail = function(req, res) {
 };
 
 
+exports.promotions_filter_by_priority = async function(req, res){
+  // req.body = {
+  //   "promotion_ids" : ["129",  "140","143","151",  "109","118",   "127"]
+  // }
+
+  let promotions_ids = req.body.promotions_ids
+
+  if (!Array.isArray(req.body.promotions_ids)) promotions_ids = [req.body.promotions_ids];
+
+  const len_of_promotions = promotions_ids.length
+
+  const all_promotions = []
+
+  const priority_promotions = []
+
+  for(let i=0; i<len_of_promotions; i++){
+    const promotion_id = promotions_ids[i]
+
+    try{
+      const promotionResult = await Models.Promotions.findOne({
+        where: {
+          id: promotion_id,
+          start_date_time: {
+            $lte: moment().toDate()
+          },
+          end_date_time: {
+              $gte: moment().toDate()
+          },
+          status: 'active',
+        }
+      })
+  
+      if(promotionResult == null) continue
+      if(promotionResult.dataValues.priority_id == null) all_promotions.push(promotion_id)  
+      else {
+        let len_or_priority_promotions = priority_promotions.length 
+        let found = false
+        for (let j=0; j < len_or_priority_promotions; j++){
+
+          if(priority_promotions[j]['priority_id'] == promotionResult.dataValues.priority_id){
+            if(promotionResult.dataValues.priority < priority_promotions[j]['priority_level']){
+              priority_promotions[j]['priority_level'] = promotionResult.dataValues.priority
+              priority_promotions[j]['promotion_id'] = promotion_id
+              found = true
+              break
+            }
+          }
+        }
+
+        if(!found) priority_promotions.push({ promotion_id: promotion_id, priority_id: promotionResult.dataValues.priority_id, priority_level: promotionResult.dataValues.priority})
+      }
+      
+    }
+    catch(err){
+      console.log(err)
+    }
+  }
+
+  let len_or_priority_promotions = priority_promotions.length 
+  
+  for (let j=0; j < len_or_priority_promotions; j++){
+    console.log(priority_promotions[j])
+    all_promotions.push(priority_promotions[j]['promotion_id'])
+  }
+  res.end(JSON.stringify({ response: 1, message: Messages['en'].SUCCESS_FETCH, promotions: all_promotions }))
+}
+
 exports.promotion_discount_amount_details = async function(req, res) {
   // req.body = {
   //     "promotion_ids": ["145", "146", "147"],
   //     "salesman_id": "12", // here salesman_id is employee_id
   //     "customer_id": "15",
+  //     "request_type": "invoice"
   // }
 
   console.log('Input ================>', req.body)
@@ -9136,12 +9204,21 @@ exports.promotion_discount_amount_details = async function(req, res) {
         where: {
           id: promotion_id,
           promotion_type: 'quantity',
-          discount_type: 'value'
+          discount_type: 'value',
+          start_date_time: {
+            $lte: moment().toDate()
+          },
+          end_date_time: {
+              $gte: moment().toDate()
+          },
+          status: 'active',
         }
       })
       console.log('Promotion row ================>', promotionResult)
 
-      if(promotionResult == null) {
+      let validFor = '';
+      if(promotionResult != null) validFor = promotionResult.dataValues.valid_for
+      if(!validFor.includes(req.body.request_type) ) {
         if(i==len_of_promotions-1) return res.end(JSON.stringify({ response: 1, message: Messages["en"].SUCCESS_FETCH, promotions: total_response}));
         continue
       }
@@ -9191,6 +9268,7 @@ exports.promotion_discount_percentage_details = async function(req, res) {
     //     "promotion_ids": ["145", "146", "147"],
     //     "salesman_id": "12", // here salesman_id is employee_id
     //     "customer_id": "15",
+    //     "request_type": "invoice"
     // }
 
     console.log('Input ================>', req.body)
@@ -9230,12 +9308,21 @@ exports.promotion_discount_percentage_details = async function(req, res) {
           where: {
             id: promotion_id,
             promotion_type: 'quantity',
-            discount_type: 'percentage'
+            discount_type: 'percentage',
+            start_date_time: {
+              $lte: moment().toDate()
+            },
+            end_date_time: {
+                $gte: moment().toDate()
+            },
+            status: 'active',
           }
         })
         console.log('Promotion row ================>', promotionResult)
 
-        if(promotionResult == null) {
+        let validFor = '';
+        if(promotionResult != null) validFor = promotionResult.dataValues.valid_for
+        if(!validFor.includes(req.body.request_type) ) {
           if(i==len_of_promotions-1) return res.end(JSON.stringify({ response: 1, message: Messages["en"].SUCCESS_FETCH, promotions: total_response}));
           continue
         }
@@ -9284,6 +9371,7 @@ exports.promotion_output_items_details = async function(req, res) {
     //     "promotion_ids": ["145", "146", "147"],
     //     "salesman_id": "12", // here salesman_id is employee_id
     //     "customer_id": "15",
+    //     "request_type": "invoice",
     // }
     console.log('Input ================>', req.body)
     const { salesman_id, customer_id } = req.body
@@ -9301,6 +9389,7 @@ exports.promotion_output_items_details = async function(req, res) {
     console.log(promotions_ids," ", len_of_promotions)
     for(let i=0; i<len_of_promotions; i++){
       const promotion_id = promotions_ids[i];
+      
       if(!promotion_id) {
         if(i==len_of_promotions-1) return res.end(JSON.stringify({ response: 1, message: Messages["en"].SUCCESS_FETCH, promotions: total_response}));
         continue
@@ -9325,12 +9414,28 @@ exports.promotion_output_items_details = async function(req, res) {
           where: {
             id: promotion_id,
             promotion_type: 'quantity',
-            discount_type: 'quantity'
+            discount_type: 'quantity',
+            start_date_time: {
+                $lte: moment().toDate()
+            },
+            end_date_time: {
+                $gte: moment().toDate()
+            },
+            status: 'active',
           }
         })
+
         console.log('Promotion row ================>', promotionResult)
 
-        if(promotionResult == null) {
+        /*
+            * if promotion result null -> continue
+            * if promotion result not null, then it has valid_for properties
+            * check valid_for propertis
+        */
+
+        let validFor = '';
+        if(promotionResult != null) validFor = promotionResult.dataValues.valid_for
+        if(!validFor.includes(req.body.request_type) ) {
           if(i==len_of_promotions-1) return res.end(JSON.stringify({ response: 1, message: Messages["en"].SUCCESS_FETCH, promotions: total_response}));
           continue
         }

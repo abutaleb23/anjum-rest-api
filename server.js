@@ -166,6 +166,7 @@ app.post('/employee/promo/quantityValueAccordingToItem', routes.quantity_value_a
 app.post('/employee/promo/promotionOutputItemsDetails', routes.promotion_output_items_details);
 app.post('/employee/promo/promotionDiscountPercentageDetails', routes.promotion_discount_percentage_details);
 app.post('/employee/promo/promotionDiscountAmountDetails', routes.promotion_discount_amount_details);
+app.post('/employee/promo/promotionsFilterByPriority', routes.promotions_filter_by_priority);
 
 //promotion section end
 app.post('/employee/saveFcmToken', routes.save_fcm_token);

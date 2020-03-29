@@ -738,7 +738,7 @@ exports.Promotions = sequelize.define("promotions", {
 	minimum_quantity_value: { type: Sequelize.INTEGER },
 	start_date_time: { type: Sequelize.DATE },
 	end_date_time: { type: Sequelize.DATE },
-	valid_for: { type: Sequelize.ENUM("invoice", "return_invoice", "both") },
+	valid_for: { type: Sequelize.STRING },
 	strictly_listed_item: { type: Sequelize.ENUM("yes", "no") },
 	// double_bonus:{type:Sequelize.ENUM('yes','no')},
 	discount: { type: Sequelize.DOUBLE },
