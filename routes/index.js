@@ -9276,6 +9276,57 @@ exports.promotion_discount_amount_details = async function(req, res) {
         continue
       }
 
+      const salesmanInvoiceLimit = await Models.PromotionsSalesmanInvoiceLimits.findOne({
+        where: {
+          promotion_id: promotion_id,
+          salesman_id: salesman_id
+        }
+      })
+
+      console.log("invoice limit for salesman", salesmanInvoiceLimit)
+
+
+      const customerInvoiceLimit = await Models.PromotionsCustomerInvoiceLimits.findOne({
+        where: {
+          promotion_id: promotion_id,
+          customer_id: customer_id
+        }
+      })
+
+      console.log('invoice limit for custoemr', customerInvoiceLimit)
+
+      /*
+        1. if salesman invoice limit is null, I have to store the invoice per limit to this table
+        2. else check whether this promotion is valid for this salesman
+        3. same for customer
+      */
+
+      if(salesmanInvoiceLimit == null) {
+        await Models.PromotionsSalesmanInvoiceLimits.create({
+          promotion_id: promotion_id,
+          salesman_id: salesman_id,
+          invoice_limit: 0
+        })
+        console.log('stored salesman promotion invoice limit data to invoice limit')
+      }
+      else if(promotionResult.dataValues.invoice_per_salesman != -1 && salesmanInvoiceLimit.dataValues.invoice_limit >= promotionResult.dataValues.invoice_per_salesman){
+        if(i==len_of_promotions-1) return res.end(JSON.stringify({ response: 1, message: Messages["en"].SUCCESS_FETCH, promotions: total_response}));
+        continue
+      }
+
+      if(customerInvoiceLimit == null){
+        await Models.PromotionsCustomerInvoiceLimits.create({
+          promotion_id: promotion_id,
+          customer_id: customer_id,
+          invoice_limit: 0
+        })
+        console.log('Stored customer promotion invoice limit data to invoice limit')
+      }
+      else if(promotionResult.dataValues.invoice_per_customer != -1 && customerInvoiceLimit.dataValues.invoice_limit >= promotionResult.dataValues.invoice_per_customer){
+        if(i==len_of_promotions-1) return res.end(JSON.stringify({ response: 1, message: Messages["en"].SUCCESS_FETCH, promotions: total_response}));
+        continue
+      }
+
       const valuePromotion = await Models.Promotions.findOne({
         where: {
           id: promotion_id
@@ -9376,6 +9427,57 @@ exports.promotion_discount_percentage_details = async function(req, res) {
         console.log('Promotions customer group customer', promotionCustomerGroup)
 
         if(promotionSalesmanGroup == null && promotionCustomerGroup == null) {
+          if(i==len_of_promotions-1) return res.end(JSON.stringify({ response: 1, message: Messages["en"].SUCCESS_FETCH, promotions: total_response}));
+          continue
+        }
+
+        const salesmanInvoiceLimit = await Models.PromotionsSalesmanInvoiceLimits.findOne({
+          where: {
+            promotion_id: promotion_id,
+            salesman_id: salesman_id
+          }
+        })
+
+        console.log("invoice limit for salesman", salesmanInvoiceLimit)
+
+
+        const customerInvoiceLimit = await Models.PromotionsCustomerInvoiceLimits.findOne({
+          where: {
+            promotion_id: promotion_id,
+            customer_id: customer_id
+          }
+        })
+
+        console.log('invoice limit for custoemr', customerInvoiceLimit)
+
+        /*
+          1. if salesman invoice limit is null, I have to store the invoice per limit to this table
+          2. else check whether this promotion is valid for this salesman
+          3. same for customer
+        */
+
+        if(salesmanInvoiceLimit == null) {
+          await Models.PromotionsSalesmanInvoiceLimits.create({
+            promotion_id: promotion_id,
+            salesman_id: salesman_id,
+            invoice_limit: 0
+          })
+          console.log('stored salesman promotion invoice limit data to invoice limit')
+        }
+        else if(promotionResult.dataValues.invoice_per_salesman != -1 && salesmanInvoiceLimit.dataValues.invoice_limit >= promotionResult.dataValues.invoice_per_salesman){
+          if(i==len_of_promotions-1) return res.end(JSON.stringify({ response: 1, message: Messages["en"].SUCCESS_FETCH, promotions: total_response}));
+          continue
+        }
+
+        if(customerInvoiceLimit == null){
+          await Models.PromotionsCustomerInvoiceLimits.create({
+            promotion_id: promotion_id,
+            customer_id: customer_id,
+            invoice_limit: 0
+          })
+          console.log('Stored customer promotion invoice limit data to invoice limit')
+        }
+        else if(promotionResult.dataValues.invoice_per_customer != -1 && customerInvoiceLimit.dataValues.invoice_limit >= promotionResult.dataValues.invoice_per_customer){
           if(i==len_of_promotions-1) return res.end(JSON.stringify({ response: 1, message: Messages["en"].SUCCESS_FETCH, promotions: total_response}));
           continue
         }
