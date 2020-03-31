@@ -7405,67 +7405,68 @@ exports.sales_order_request_submit = async function(req, res) {
                 */
 
 								if (
-									req.body.request_type == "invoice" &&
-									promotions_data[j].promotion_bonus_quantity != 0
-								) {
+									req.body.request_type == "invoice") {
                   console.log("=====================> ami ekhane ===============================>")
-									try {
-										const stockItemData = await Models.StockItems.findOne({
-											where: {
-												user_id: req.body.user_id,
-												store_id: req.body.store_id,
-												item_id: promotions_data[j].promotion_bonus_item_id,
-												measurement_unit_id:
-													promotions_data[j].measurement_unit_id
-											}
-										});
+                  try {
+                    if( promotions_data[j].promotion_bonus_quantity ){
+                      const stockItemData = await Models.StockItems.findOne({
+                        where: {
+                          user_id: req.body.user_id,
+                          store_id: req.body.store_id,
+                          item_id: promotions_data[j].promotion_bonus_item_id,
+                          measurement_unit_id:
+                            promotions_data[j].measurement_unit_id
+                        }
+                      });
 
-										if (
-											parseInt(stockItemData.quantity) <
-											parseInt(promotions_data[j].promotion_bonus_quantity)
-										) {
-											console.log("promotion maximum quantity exceeded");
-											return res.end(
-												JSON.stringify({
-													response: 2,
-													message: `No quantity available for bonus. There are ${stockItemData.quantity} items in stock for ${promotions_data[j].promotion_bonus_item_id} product`
-												})
-											);
-										}
+                      if (
+                        parseInt(stockItemData.quantity) <
+                        parseInt(promotions_data[j].promotion_bonus_quantity)
+                      ) {
+                        console.log("promotion maximum quantity exceeded");
+                        return res.end(
+                          JSON.stringify({
+                            response: 2,
+                            message: `No quantity available for bonus. There are ${stockItemData.quantity} items in stock for ${promotions_data[j].promotion_bonus_item_id} product`
+                          })
+                        );
+                      }
 
-										const remain_quantity =
-											stockItemData.quantity -
-											promotions_data[j].promotion_bonus_quantity;
+                      const remain_quantity =
+                        stockItemData.quantity -
+                        promotions_data[j].promotion_bonus_quantity;
 
-										await Models.StockItems.update(
-											{ quantity: remain_quantity },
-											{
-												where: {
-													user_id: req.body.user_id,
-													store_id: req.body.store_id,
-													item_id: promotions_data[j].promotion_bonus_item_id,
-													measurement_unit_id:
-														promotions_data[j].measurement_unit_id
-												}
-											}
-										);
-										console.log(
-											"promotion stock item quantity updated ==================",
-											promotions_data[j].promotion_bonus_quantity
-										);
+                      await Models.StockItems.update(
+                        { quantity: remain_quantity },
+                        {
+                          where: {
+                            user_id: req.body.user_id,
+                            store_id: req.body.store_id,
+                            item_id: promotions_data[j].promotion_bonus_item_id,
+                            measurement_unit_id:
+                              promotions_data[j].measurement_unit_id
+                          }
+                        }
+                      );
+                      console.log(
+                        "promotion stock item quantity updated ==================",
+                        promotions_data[j].promotion_bonus_quantity
+                      );
 
-										await Models.SalesOrderInvoiceRequestStockItems.create({
-											sales_order_request_id: salesOrderRequest.id,
-											user_id: req.body.user_id,
-											store_id: req.body.store_id,
-											item_id: sales_order_arr[i].item_id,
-											measurement_unit_id:
-												sales_order_arr[i].measurement_unit_id,
-											quantity: promotions_data[j].promotion_bonus_quantity
-										});
-										console.log(
-											"sales order invoice request stock items created =================="
-                    );
+                      await Models.SalesOrderInvoiceRequestStockItems.create({
+                        sales_order_request_id: salesOrderRequest.id,
+                        user_id: req.body.user_id,
+                        store_id: req.body.store_id,
+                        item_id: sales_order_arr[i].item_id,
+                        measurement_unit_id:
+                          sales_order_arr[i].measurement_unit_id,
+                        quantity: promotions_data[j].promotion_bonus_quantity
+                      });
+                      console.log(
+                        "sales order invoice request stock items created =================="
+                      );
+                    }
+
 
                     console.log('testing promotion arr=====================> ', promotions_data[j])
                     
@@ -7477,7 +7478,11 @@ exports.sales_order_request_submit = async function(req, res) {
                     })
                     
                     console.log('Saleman invoice limit ===============>', salesmanInvoiceLimit)
-                    if(salesmanInvoiceLimit) salesmanInvoiceLimit.increment('invoice_limit')
+        
+                    if(salesmanInvoiceLimit){
+                      const updatedSalesmanInvoiceLimit = parseInt(salesmanInvoiceLimit.dataValues.invoice_limit) + 1
+                      salesmanInvoiceLimit.update({ invoice_limit: updatedSalesmanInvoiceLimit })
+                    } 
 
                     const customerInvoiceLimit = await Models.PromotionsCustomerInvoiceLimits.findOne({
                       where: {
@@ -7487,27 +7492,32 @@ exports.sales_order_request_submit = async function(req, res) {
                     })
                     
                     console.log('Saleman invoice limit ===============>', customerInvoiceLimit)
-                    if(customerInvoiceLimit) customerInvoiceLimit.increment('invoice_limit')
+
+                    if(customerInvoiceLimit) {
+                      const updatedCustomerInvoiceLimit = parseInt(customerInvoiceLimit.dataValues.invoice_limit) + 1
+                      customerInvoiceLimit.increment({ invoice_limit: updatedCustomerInvoiceLimit })
+                    }
 
                     
                     console.log('increment salesman and customer promotion invoice limit ============>')
 
-									} catch (err) {
+                  } 
+                  catch (err) {
                     console.log('invoice limit ====================>', err)
-										console.log(
-											"error in promotion stock item quantity update =================="
-										);
-										console.log(
-											"or error in sales order invoice stock items created============="
-										);
-										return res.end(
-											JSON.stringify({
-												response: 0,
-												message: Messages["en"].ERROR_FETCH
-											})
-										);
-									}
-								}
+                    console.log(
+                      "error in promotion stock item quantity update =================="
+                    );
+                    console.log(
+                      "or error in sales order invoice stock items created============="
+                    );
+                    return res.end(
+                      JSON.stringify({
+                        response: 0,
+                        message: Messages["en"].ERROR_FETCH
+                      })
+                    )
+                  }
+              }
 								// }
 
 								console.log(
@@ -9152,7 +9162,7 @@ exports.promotions_filter_by_priority = async function(req, res){
           status: 'active',
         }
       })
-
+      console.log(moment().toDate()," ", Date(), " ", moment().toDate())
       console.log('Promotion result =====================>', promotionResult)
   
       if(promotionResult == null) continue
