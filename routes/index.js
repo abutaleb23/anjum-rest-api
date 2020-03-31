@@ -28,7 +28,7 @@ var fs = require("fs");
 var twinBcrypt = require("twin-bcrypt");
 var mailer = require("express-mailer");
 var moment = require("moment");
-var mail = require("./nodeMail");
+var mail = require("./nodeMail"); 
 var path = require("path");
 
 var file_type_regex = /(?:\.([^.]+))?$/;
@@ -9097,7 +9097,7 @@ exports.promotions_filter_by_priority = async function(req, res){
   // req.body = {
   //   "promotion_ids" : ["129",  "140","143","151",  "109","118",   "127"]
   // }
-
+  console.log('Input ===============================>', req.body)
   let promotions_ids = req.body.promotions_ids
 
   if (!Array.isArray(req.body.promotions_ids)) promotions_ids = [req.body.promotions_ids];
@@ -9110,7 +9110,7 @@ exports.promotions_filter_by_priority = async function(req, res){
 
   for(let i=0; i<len_of_promotions; i++){
     const promotion_id = promotions_ids[i]
-
+    console.log("promotion id =========================>", promotion_id)
     try{
       const promotionResult = await Models.Promotions.findOne({
         where: {
@@ -9124,23 +9124,27 @@ exports.promotions_filter_by_priority = async function(req, res){
           status: 'active',
         }
       })
+
+      console.log('Promotion result =====================>', promotionResult)
   
       if(promotionResult == null) continue
       if(promotionResult.dataValues.priority_id == null) all_promotions.push(promotion_id)  
       else {
+        console.log('first time priority_promotions ===================>', priority_promotions)
         let len_or_priority_promotions = priority_promotions.length 
         let found = false
         for (let j=0; j < len_or_priority_promotions; j++){
 
           if(priority_promotions[j]['priority_id'] == promotionResult.dataValues.priority_id){
+            found = true
             if(promotionResult.dataValues.priority < priority_promotions[j]['priority_level']){
               priority_promotions[j]['priority_level'] = promotionResult.dataValues.priority
               priority_promotions[j]['promotion_id'] = promotion_id
-              found = true
               break
             }
           }
         }
+        console.log('last time priority_promotions ===================>', priority_promotions)
 
         if(!found) priority_promotions.push({ promotion_id: promotion_id, priority_id: promotionResult.dataValues.priority_id, priority_level: promotionResult.dataValues.priority})
       }
