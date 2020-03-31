@@ -6966,7 +6966,7 @@ exports.sales_order_request_submit = async function(req, res) {
 	// 			"measurement_unit_id": 23
 	// 		}]
 	// 	}]
-    // };
+  //   };
     console.log("sales order request submit ===========");
 	console.log(req.body);
 
@@ -7355,7 +7355,7 @@ exports.sales_order_request_submit = async function(req, res) {
 								// promotions_data = "";
 								promotions_data = sale_req_detail.sales_order_promotions_arr;
 								console.log(
-									"promotions data ----------------------------",
+									"promotions dataaaa ----------------------------",
 									promotions_data
 								);
 
@@ -7408,6 +7408,7 @@ exports.sales_order_request_submit = async function(req, res) {
 									req.body.request_type == "invoice" &&
 									promotions_data[j].promotion_bonus_quantity != 0
 								) {
+                  console.log("=====================> ami ekhane ===============================>")
 									try {
 										const stockItemData = await Models.StockItems.findOne({
 											where: {
@@ -7464,15 +7465,42 @@ exports.sales_order_request_submit = async function(req, res) {
 										});
 										console.log(
 											"sales order invoice request stock items created =================="
-										);
+                    );
+
+                    console.log('testing promotion arr=====================> ', promotions_data[j])
+                    
+                    const salesmanInvoiceLimit = await Models.PromotionsSalesmanInvoiceLimits.findOne({
+                      where: {
+                        promotion_id: promotions_data[j].promotion_id,
+                        salesman_id: req.body.employee_id,
+                      }
+                    })
+                    
+                    console.log('Saleman invoice limit ===============>', salesmanInvoiceLimit)
+                    if(salesmanInvoiceLimit) salesmanInvoiceLimit.increment('invoice_limit')
+
+                    const customerInvoiceLimit = await Models.PromotionsCustomerInvoiceLimits.findOne({
+                      where: {
+                        promotion_id: promotions_data[j].promotion_id,
+                        customer_id: req.body.customer_id,
+                      }
+                    })
+                    
+                    console.log('Saleman invoice limit ===============>', customerInvoiceLimit)
+                    if(customerInvoiceLimit) customerInvoiceLimit.increment('invoice_limit')
+
+                    
+                    console.log('increment salesman and customer promotion invoice limit ============>')
+
 									} catch (err) {
+                    console.log('invoice limit ====================>', err)
 										console.log(
 											"error in promotion stock item quantity update =================="
 										);
 										console.log(
 											"or error in sales order invoice stock items created============="
 										);
-										res.end(
+										return res.end(
 											JSON.stringify({
 												response: 0,
 												message: Messages["en"].ERROR_FETCH
