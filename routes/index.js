@@ -1,3 +1,4 @@
+const { utcDate } = require('../utils/compare-date')
 const winston = require("winston");
 var express = require("express");
 var app = express();
@@ -9133,8 +9134,8 @@ exports.get_single_promotion_item_detail = function(req, res) {
 
 exports.promotions_filter_by_priority = async function(req, res){
   // req.body = {
-  //   "promotion_ids" : ["129",  "140","143","151",  "109","118",   "127"],
-  //   "current_date_time":"2020-03-31 20:34:42"
+  //   "promotions_ids" : ["129",  "140","143","151",  "109","118",   "127"],
+  //   "total_cart_items": "35"
   // }
   console.log('Input ===============================>', req.body)
   let promotions_ids = req.body.promotions_ids
@@ -9151,7 +9152,7 @@ exports.promotions_filter_by_priority = async function(req, res){
     const promotion_id = promotions_ids[i]
     console.log("promotion id =========================>", promotion_id)
     try{
-      const current_date_time = req.body.current_date_time
+      const current_date_time = utcDate(moment().toDate())
       const promotionResult = await Models.Promotions.findOne({
         where: {
           id: promotion_id,
@@ -9161,11 +9162,15 @@ exports.promotions_filter_by_priority = async function(req, res){
           end_date_time: {
               $gte: current_date_time
           },
+          minimum_quantity_value: {
+            $lte: req.body.total_cart_items
+          },
           status: 'active',
         }
       })
 
       console.log('Promotion result =====================>', promotionResult)
+      console.log('current date time ====================>', current_date_time)
   
       if(promotionResult == null) continue
       if(promotionResult.dataValues.priority_id == null) all_promotions.push(promotion_id)  
@@ -9210,7 +9215,6 @@ exports.promotion_discount_amount_details = async function(req, res) {
   //     "salesman_id": "12", // here salesman_id is employee_id
   //     "customer_id": "15",
   //     "request_type": "invoice"
-  //   "current_date_time":"2020-03-31 20:34:42"
   // }
 
   console.log('Input ================>', req.body)
@@ -9245,7 +9249,7 @@ exports.promotion_discount_amount_details = async function(req, res) {
     */
 
     try{
-      const current_date_time = req.body.current_date_time
+      const current_date_time = utcDate(moment().toDate())
       const promotionResult = await Models.Promotions.findOne({
         where: {
           id: promotion_id,
@@ -9366,7 +9370,6 @@ exports.promotion_discount_percentage_details = async function(req, res) {
     //     "salesman_id": "12", // here salesman_id is employee_id
     //     "customer_id": "15",
     //     "request_type": "invoice"
-    //   "current_date_time":"2020-03-31 20:34:42"
     // }
 
     console.log('Input ================>', req.body)
@@ -9402,7 +9405,7 @@ exports.promotion_discount_percentage_details = async function(req, res) {
       */
 
       try{
-        const current_date_time = req.body.current_date_time
+        const current_date_time = utcDate(moment().toDate())
         const promotionResult = await Models.Promotions.findOne({
           where: {
             id: promotion_id,
@@ -9521,8 +9524,7 @@ exports.promotion_output_items_details = async function(req, res) {
     //     "promotion_ids": ["145", "146", "147"],
     //     "salesman_id": "12", // here salesman_id is employee_id
     //     "customer_id": "15",
-    //     "request_type": "invoice",
-    //   "current_date_time":"2020-03-31 20:34:42"
+    //     "request_type": "invoice"
     // }
     console.log('Input ================>', req.body)
     const { salesman_id, customer_id } = req.body
@@ -9561,7 +9563,7 @@ exports.promotion_output_items_details = async function(req, res) {
       */
 
       try{
-        const current_date_time = req.body.current_date_time
+        const current_date_time = utcDate(moment().toDate())
         const promotionResult = await Models.Promotions.findOne({
           where: {
             id: promotion_id,
