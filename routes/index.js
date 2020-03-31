@@ -9133,7 +9133,8 @@ exports.get_single_promotion_item_detail = function(req, res) {
 
 exports.promotions_filter_by_priority = async function(req, res){
   // req.body = {
-  //   "promotion_ids" : ["129",  "140","143","151",  "109","118",   "127"]
+  //   "promotion_ids" : ["129",  "140","143","151",  "109","118",   "127"],
+  //   "current_date_time":"2020-03-31 20:34:42"
   // }
   console.log('Input ===============================>', req.body)
   let promotions_ids = req.body.promotions_ids
@@ -9150,19 +9151,20 @@ exports.promotions_filter_by_priority = async function(req, res){
     const promotion_id = promotions_ids[i]
     console.log("promotion id =========================>", promotion_id)
     try{
+      const current_date_time = req.body.current_date_time
       const promotionResult = await Models.Promotions.findOne({
         where: {
           id: promotion_id,
           start_date_time: {
-            $lte: moment().toDate()
+            $lte: current_date_time
           },
           end_date_time: {
-              $gte: moment().toDate()
+              $gte: current_date_time
           },
           status: 'active',
         }
       })
-      console.log(moment().toDate()," ", Date(), " ", moment().toDate())
+
       console.log('Promotion result =====================>', promotionResult)
   
       if(promotionResult == null) continue
@@ -9208,6 +9210,7 @@ exports.promotion_discount_amount_details = async function(req, res) {
   //     "salesman_id": "12", // here salesman_id is employee_id
   //     "customer_id": "15",
   //     "request_type": "invoice"
+  //   "current_date_time":"2020-03-31 20:34:42"
   // }
 
   console.log('Input ================>', req.body)
@@ -9242,16 +9245,17 @@ exports.promotion_discount_amount_details = async function(req, res) {
     */
 
     try{
+      const current_date_time = req.body.current_date_time
       const promotionResult = await Models.Promotions.findOne({
         where: {
           id: promotion_id,
           promotion_type: 'quantity',
           discount_type: 'value',
           start_date_time: {
-            $lte: moment().toDate()
+            $lte: current_date_time
           },
           end_date_time: {
-              $gte: moment().toDate()
+              $gte: current_date_time
           },
           status: 'active',
         }
@@ -9362,6 +9366,7 @@ exports.promotion_discount_percentage_details = async function(req, res) {
     //     "salesman_id": "12", // here salesman_id is employee_id
     //     "customer_id": "15",
     //     "request_type": "invoice"
+    //   "current_date_time":"2020-03-31 20:34:42"
     // }
 
     console.log('Input ================>', req.body)
@@ -9397,16 +9402,17 @@ exports.promotion_discount_percentage_details = async function(req, res) {
       */
 
       try{
+        const current_date_time = req.body.current_date_time
         const promotionResult = await Models.Promotions.findOne({
           where: {
             id: promotion_id,
             promotion_type: 'quantity',
             discount_type: 'percentage',
             start_date_time: {
-              $lte: moment().toDate()
+              $lte: current_date_time
             },
             end_date_time: {
-                $gte: moment().toDate()
+                $gte: current_date_time
             },
             status: 'active',
           }
@@ -9516,6 +9522,7 @@ exports.promotion_output_items_details = async function(req, res) {
     //     "salesman_id": "12", // here salesman_id is employee_id
     //     "customer_id": "15",
     //     "request_type": "invoice",
+    //   "current_date_time":"2020-03-31 20:34:42"
     // }
     console.log('Input ================>', req.body)
     const { salesman_id, customer_id } = req.body
@@ -9554,16 +9561,17 @@ exports.promotion_output_items_details = async function(req, res) {
       */
 
       try{
+        const current_date_time = req.body.current_date_time
         const promotionResult = await Models.Promotions.findOne({
           where: {
             id: promotion_id,
             promotion_type: 'quantity',
             discount_type: 'quantity',
             start_date_time: {
-                $lte: moment().toDate()
+                $lte: current_date_time
             },
             end_date_time: {
-                $gte: moment().toDate()
+                $gte: current_date_time
             },
             status: 'active',
           }
