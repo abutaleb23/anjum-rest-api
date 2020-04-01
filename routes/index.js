@@ -9136,8 +9136,9 @@ exports.promotions_filter_by_priority = async function(req, res){
   // req.body = {
   //   "promotions_ids" : ["129",  "140","143","151",  "109","118",   "127"],
   //   "total_cart_items": "35"
+  //   "current_date_time": "2020-04-01 15:57:38",
   // }
-  console.log('Input ===============================>', req.body)
+  winston.log("info", 'Input ===============================>', req.body)
   let promotions_ids = req.body.promotions_ids
 
   if (!Array.isArray(req.body.promotions_ids)) promotions_ids = [req.body.promotions_ids];
@@ -9150,9 +9151,9 @@ exports.promotions_filter_by_priority = async function(req, res){
 
   for(let i=0; i<len_of_promotions; i++){
     const promotion_id = promotions_ids[i]
-    console.log("promotion id =========================>", promotion_id)
+    winston.log("info", "promotion id =========================>", promotion_id)
     try{
-      const current_date_time = utcDate(moment().toDate())
+      const current_date_time = utcDate(moment(req.body.current_date_time).toDate())
       const promotionResult = await Models.Promotions.findOne({
         where: {
           id: promotion_id,
@@ -9169,13 +9170,13 @@ exports.promotions_filter_by_priority = async function(req, res){
         }
       })
 
-      console.log('Promotion result =====================>', promotionResult)
-      console.log('current date time ====================>', current_date_time)
+      winston.log("info", 'Promotion result =====================>', promotionResult)
+      winston.log("info", 'current date time ====================>', current_date_time)
   
       if(promotionResult == null) continue
       if(promotionResult.dataValues.priority_id == null) all_promotions.push(promotion_id)  
       else {
-        console.log('first time priority_promotions ===================>', priority_promotions)
+        winston.log("info", 'first time priority_promotions ===================>', priority_promotions)
         let len_or_priority_promotions = priority_promotions.length 
         let found = false
         for (let j=0; j < len_or_priority_promotions; j++){
@@ -9189,21 +9190,21 @@ exports.promotions_filter_by_priority = async function(req, res){
             }
           }
         }
-        console.log('last time priority_promotions ===================>', priority_promotions)
+        winston.log("info", 'last time priority_promotions ===================>', priority_promotions)
 
         if(!found) priority_promotions.push({ promotion_id: promotion_id, priority_id: promotionResult.dataValues.priority_id, priority_level: promotionResult.dataValues.priority})
       }
       
     }
     catch(err){
-      console.log(err)
+      winston.log("info", err)
     }
   }
 
   let len_or_priority_promotions = priority_promotions.length 
   
   for (let j=0; j < len_or_priority_promotions; j++){
-    console.log(priority_promotions[j])
+    winston.log("info", priority_promotions[j])
     all_promotions.push(priority_promotions[j]['promotion_id'])
   }
   res.end(JSON.stringify({ response: 1, message: Messages['en'].SUCCESS_FETCH, promotions: all_promotions }))
@@ -9718,7 +9719,7 @@ exports.get_store_stock_list = function(req, res) {
 			]
 		}).then(
 			stockData => {
-				console.log("success =================", stockData);
+				winston.log("info", "success =================", stockData);
 				res.end(
 					JSON.stringify({
 						response: 1,
