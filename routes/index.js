@@ -9136,12 +9136,12 @@ exports.promotions_filter_by_priority = async function(req, res){
   // req.body = {
   //   "promotions_ids" : ["129",  "140","143","151",  "109","118",   "127"],
   //   "total_cart_items": "35"
-  //   "current_date_time": "2020-04-01 15:57:38",
-  //   "request_type": "invoice"
   //   "salesman_id": 59,
   //   "customer_id": 126
+  //   "request_type": "invoice"
+  //   "current_date_time": "2020-04-01 15:57:38",
   // }
-  winston.log("info", 'Input ===============================>', req.body)
+  console.log("info", 'Input ===============================>', req.body)
 
   if(!req.body.request_type) return res.end(JSON.stringify({ response: 0, message: Messages['en'].WRONG_DATA }))
 
@@ -9157,7 +9157,7 @@ exports.promotions_filter_by_priority = async function(req, res){
 
   for(let i=0; i<len_of_promotions; i++){
     const promotion_id = promotions_ids[i]
-    winston.log("info", "promotion id =========================>", promotion_id)
+    console.log("info", "promotion id =========================>", promotion_id)
     try{
       const current_date_time = utcDate(moment(req.body.current_date_time).toDate())
       const promotionResult = await Models.Promotions.findOne({
@@ -9177,7 +9177,7 @@ exports.promotions_filter_by_priority = async function(req, res){
       })
 
       console.log("info", 'Promotion result =====================>', promotionResult)
-      winston.log("info", 'current date time ====================>', current_date_time)
+      console.log("info", 'current date time ====================>', current_date_time)
 
       
       if(promotionResult == null) continue
@@ -9190,39 +9190,39 @@ exports.promotions_filter_by_priority = async function(req, res){
       const promotionSalesmanGroup = await Models.PromotionsSalesmanGroupAssignSalesmans.findOne({
         where:{
           group_id: promotionResult.dataValues.salesman_group_id,
-          employee_id: salesman_id
+          employee_id: req.body.salesman_id
         }
       })
-      winston.log("info", 'Promotion salesman group assign salesman', promotionSalesmanGroup)
+      console.log("info", 'Promotion salesman group assign salesman', promotionSalesmanGroup)
 
       const promotionCustomerGroup = await Models.PromotionsCustomersGroupCustomers.findOne({
         where:{
           group_id: promotionResult.dataValues.customer_group_id,
-          customer_id: customer_id
+          customer_id: req.body.customer_id
         }
       })
-      winston.log("info", 'Promotions customer group customer', promotionCustomerGroup)
+      console.log("info", 'Promotions customer group customer', promotionCustomerGroup)
 
       if(promotionSalesmanGroup == null && promotionCustomerGroup == null) continue
 
       const salesmanInvoiceLimit = await Models.PromotionsSalesmanInvoiceLimits.findOne({
         where: {
           promotion_id: promotion_id,
-          salesman_id: salesman_id
+          salesman_id: req.body.salesman_id
         }
       })
 
-      winston.log("info", "invoice limit for salesman", salesmanInvoiceLimit)
+      console.log("info", "invoice limit for salesman", salesmanInvoiceLimit)
 
 
       const customerInvoiceLimit = await Models.PromotionsCustomerInvoiceLimits.findOne({
         where: {
           promotion_id: promotion_id,
-          customer_id: customer_id
+          customer_id: req.body.customer_id
         }
       })
 
-      winston.log("info", 'invoice limit for custoemr', customerInvoiceLimit)
+      console.log("info", 'invoice limit for custoemr', customerInvoiceLimit)
 
         
           // 1. if salesman invoice limit is null, I have to store the invoice per limit to this table
@@ -9233,27 +9233,27 @@ exports.promotions_filter_by_priority = async function(req, res){
       if(salesmanInvoiceLimit == null) {
         await Models.PromotionsSalesmanInvoiceLimits.create({
           promotion_id: promotion_id,
-          salesman_id: salesman_id,
+          salesman_id: req.body.salesman_id,
           invoice_limit: 0
         })
-        winston.log("info", 'stored salesman promotion invoice limit data to invoice limit')
+        console.log("info", 'stored salesman promotion invoice limit data to invoice limit')
       }
       else if(promotionResult.dataValues.invoice_per_salesman != -1 && salesmanInvoiceLimit.dataValues.invoice_limit >= promotionResult.dataValues.invoice_per_salesman) continue
 
       if(customerInvoiceLimit == null){
         await Models.PromotionsCustomerInvoiceLimits.create({
           promotion_id: promotion_id,
-          customer_id: customer_id,
+          customer_id: req.body.customer_id,
           invoice_limit: 0
         })
-        winston.log("info", 'Stored customer promotion invoice limit data to invoice limit')
+        console.log("info", 'Stored customer promotion invoice limit data to invoice limit')
       }
       else if(promotionResult.dataValues.invoice_per_customer != -1 && customerInvoiceLimit.dataValues.invoice_limit >= promotionResult.dataValues.invoice_per_customer) continue
       
   
       if(promotionResult.dataValues.priority_id == null) all_promotions.push(promotion_id)  
       else {
-        winston.log("info", 'first time priority_promotions ===================>', priority_promotions)
+        console.log("info", 'first time priority_promotions ===================>', priority_promotions)
         let len_or_priority_promotions = priority_promotions.length 
         let found = false
         for (let j=0; j < len_or_priority_promotions; j++){
@@ -9267,21 +9267,21 @@ exports.promotions_filter_by_priority = async function(req, res){
             }
           }
         }
-        winston.log("info", 'last time priority_promotions ===================>', priority_promotions)
+        console.log("info", 'last time priority_promotions ===================>', priority_promotions)
 
         if(!found) priority_promotions.push({ promotion_id: promotion_id, priority_id: promotionResult.dataValues.priority_id, priority_level: promotionResult.dataValues.priority})
       }
       
     }
     catch(err){
-      winston.log("info", err)
+      console.log("info", err)
     }
   }
 
   let len_or_priority_promotions = priority_promotions.length 
   
   for (let j=0; j < len_or_priority_promotions; j++){
-    winston.log("info", priority_promotions[j])
+    console.log("info", priority_promotions[j])
     all_promotions.push(priority_promotions[j]['promotion_id'])
   }
   res.end(JSON.stringify({ response: 1, message: Messages['en'].SUCCESS_FETCH, promotions: all_promotions }))
