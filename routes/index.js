@@ -9249,19 +9249,11 @@ exports.promotion_discount_amount_details = async function(req, res) {
     */
 
     try{
-      const current_date_time = utcDate(moment().toDate())
       const promotionResult = await Models.Promotions.findOne({
         where: {
           id: promotion_id,
           promotion_type: 'quantity',
           discount_type: 'value',
-          start_date_time: {
-            $lte: current_date_time
-          },
-          end_date_time: {
-              $gte: current_date_time
-          },
-          status: 'active',
         }
       })
       console.log('Promotion row ================>', promotionResult)
@@ -9405,19 +9397,11 @@ exports.promotion_discount_percentage_details = async function(req, res) {
       */
 
       try{
-        const current_date_time = utcDate(moment().toDate())
         const promotionResult = await Models.Promotions.findOne({
           where: {
             id: promotion_id,
             promotion_type: 'quantity',
             discount_type: 'percentage',
-            start_date_time: {
-              $lte: current_date_time
-            },
-            end_date_time: {
-                $gte: current_date_time
-            },
-            status: 'active',
           }
         })
         console.log('Promotion row ================>', promotionResult)
@@ -9563,19 +9547,11 @@ exports.promotion_output_items_details = async function(req, res) {
       */
 
       try{
-        const current_date_time = utcDate(moment().toDate())
         const promotionResult = await Models.Promotions.findOne({
           where: {
             id: promotion_id,
             promotion_type: 'quantity',
             discount_type: 'quantity',
-            start_date_time: {
-                $lte: current_date_time
-            },
-            end_date_time: {
-                $gte: current_date_time
-            },
-            status: 'active',
           }
         })
 
