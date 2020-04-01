@@ -9217,7 +9217,7 @@ exports.promotion_discount_amount_details = async function(req, res) {
   //     "request_type": "invoice"
   // }
 
-  console.log('Input ================>', req.body)
+  winston.log("info", 'Input ================>', req.body)
   const { salesman_id, customer_id } = req.body
   let promotions_ids = req.body.promotions_ids
 
@@ -9225,20 +9225,20 @@ exports.promotion_discount_amount_details = async function(req, res) {
 
   
   if (!Array.isArray(req.body.promotions_ids)) promotions_ids = [req.body.promotions_ids];
-  // console.log(salesman_id, " ", customer_id, " ", promotions_ids)
+  // winston.log("info", salesman_id, " ", customer_id, " ", promotions_ids)
   
   const len_of_promotions = promotions_ids.length
 
   const total_response = []
-  console.log(promotions_ids," ", len_of_promotions)
+  winston.log("info", promotions_ids," ", len_of_promotions)
   for(let i=0; i<len_of_promotions; i++){
     const promotion_id = promotions_ids[i];
     if(!promotion_id) {
       if(i==len_of_promotions-1) return res.end(JSON.stringify({ response: 1, message: Messages["en"].SUCCESS_FETCH, promotions: total_response}));
       continue;
     }
-    console.log('promotion id', promotion_id)
-    console.log(i)
+    winston.log("info", 'promotion id', promotion_id)
+    winston.log("info", i)
     /*
       1. take salesman_group_id and customer_group_id from promotions table
       2. check employee_id and salesman_group_id is in promotions_salesman_group_assign_salesman
@@ -9256,7 +9256,7 @@ exports.promotion_discount_amount_details = async function(req, res) {
           discount_type: 'value',
         }
       })
-      console.log('Promotion row ================>', promotionResult)
+      winston.log("info", 'Promotion row ================>', promotionResult)
 
       let validFor = '';
       if(promotionResult != null) validFor = promotionResult.dataValues.valid_for
@@ -9271,7 +9271,7 @@ exports.promotion_discount_amount_details = async function(req, res) {
           employee_id: salesman_id
         }
       })
-      console.log('Promotion salesman group assign salesman', promotionSalesmanGroup)
+      winston.log("info", 'Promotion salesman group assign salesman', promotionSalesmanGroup)
 
       const promotionCustomerGroup = await Models.PromotionsCustomersGroupCustomers.findOne({
         where:{
@@ -9279,7 +9279,7 @@ exports.promotion_discount_amount_details = async function(req, res) {
           customer_id: customer_id
         }
       })
-      console.log('Promotions customer group customer', promotionCustomerGroup)
+      winston.log("info", 'Promotions customer group customer', promotionCustomerGroup)
 
       if(promotionSalesmanGroup == null && promotionCustomerGroup == null) {
         if(i==len_of_promotions-1) return res.end(JSON.stringify({ response: 1, message: Messages["en"].SUCCESS_FETCH, promotions: total_response}));
@@ -9293,7 +9293,7 @@ exports.promotion_discount_amount_details = async function(req, res) {
         }
       })
 
-      console.log("invoice limit for salesman", salesmanInvoiceLimit)
+      winston.log("info", "invoice limit for salesman", salesmanInvoiceLimit)
 
 
       const customerInvoiceLimit = await Models.PromotionsCustomerInvoiceLimits.findOne({
@@ -9303,7 +9303,7 @@ exports.promotion_discount_amount_details = async function(req, res) {
         }
       })
 
-      console.log('invoice limit for custoemr', customerInvoiceLimit)
+      winston.log("info", 'invoice limit for custoemr', customerInvoiceLimit)
 
       /*
         1. if salesman invoice limit is null, I have to store the invoice per limit to this table
@@ -9317,7 +9317,7 @@ exports.promotion_discount_amount_details = async function(req, res) {
           salesman_id: salesman_id,
           invoice_limit: 0
         })
-        console.log('stored salesman promotion invoice limit data to invoice limit')
+        winston.log("info", 'stored salesman promotion invoice limit data to invoice limit')
       }
       else if(promotionResult.dataValues.invoice_per_salesman != -1 && salesmanInvoiceLimit.dataValues.invoice_limit >= promotionResult.dataValues.invoice_per_salesman){
         if(i==len_of_promotions-1) return res.end(JSON.stringify({ response: 1, message: Messages["en"].SUCCESS_FETCH, promotions: total_response}));
@@ -9330,7 +9330,7 @@ exports.promotion_discount_amount_details = async function(req, res) {
           customer_id: customer_id,
           invoice_limit: 0
         })
-        console.log('Stored customer promotion invoice limit data to invoice limit')
+        winston.log("info", 'Stored customer promotion invoice limit data to invoice limit')
       }
       else if(promotionResult.dataValues.invoice_per_customer != -1 && customerInvoiceLimit.dataValues.invoice_limit >= promotionResult.dataValues.invoice_per_customer){
         if(i==len_of_promotions-1) return res.end(JSON.stringify({ response: 1, message: Messages["en"].SUCCESS_FETCH, promotions: total_response}));
@@ -9343,13 +9343,13 @@ exports.promotion_discount_amount_details = async function(req, res) {
         }
       })
 
-      console.log("success ----------------------------------", valuePromotion);
+      winston.log("info", "success ----------------------------------", valuePromotion);
       total_response.push({ promotion: valuePromotion })
       
       if(i==len_of_promotions-1) return res.end(JSON.stringify({ response: 1, message: Messages["en"].SUCCESS_FETCH, promotions: total_response}));
     }
     catch(err){
-        console.log(err)
+        winston.log("info", err)
         if(i==len_of_promotions-1) return res.end(JSON.stringify({ response: 1, message: Messages["en"].SUCCESS_FETCH, promotions: total_response}));
     }
   }
@@ -9364,7 +9364,7 @@ exports.promotion_discount_percentage_details = async function(req, res) {
     //     "request_type": "invoice"
     // }
 
-    console.log('Input ================>', req.body)
+    winston.log("info", 'Input ================>', req.body)
     const { salesman_id, customer_id } = req.body
     let promotions_ids = req.body.promotions_ids
 
@@ -9372,20 +9372,20 @@ exports.promotion_discount_percentage_details = async function(req, res) {
 
     
     if (!Array.isArray(req.body.promotions_ids)) promotions_ids = [req.body.promotions_ids];
-    // console.log(salesman_id, " ", customer_id, " ", promotions_ids)
+    // winston.log("info", salesman_id, " ", customer_id, " ", promotions_ids)
     
     const len_of_promotions = promotions_ids.length
 
     const total_response = []
-    console.log(promotions_ids," ", len_of_promotions)
+    winston.log("info", promotions_ids," ", len_of_promotions)
     for(let i=0; i<len_of_promotions; i++){
       const promotion_id = promotions_ids[i];
       if(!promotion_id) {
         if(i==len_of_promotions-1) return res.end(JSON.stringify({ response: 1, message: Messages["en"].SUCCESS_FETCH, promotions: total_response}));
         continue;
       }
-      console.log('promotion id', promotion_id)
-      console.log(i)
+      winston.log("info", 'promotion id', promotion_id)
+      winston.log("info", i)
       /*
         1. take salesman_group_id and customer_group_id from promotions table
         2. check employee_id and salesman_group_id is in promotions_salesman_group_assign_salesman
@@ -9404,7 +9404,7 @@ exports.promotion_discount_percentage_details = async function(req, res) {
             discount_type: 'percentage',
           }
         })
-        console.log('Promotion row ================>', promotionResult)
+        winston.log("info", 'Promotion row ================>', promotionResult)
 
         let validFor = '';
         if(promotionResult != null) validFor = promotionResult.dataValues.valid_for
@@ -9419,7 +9419,7 @@ exports.promotion_discount_percentage_details = async function(req, res) {
             employee_id: salesman_id
           }
         })
-        console.log('Promotion salesman group assign salesman', promotionSalesmanGroup)
+        winston.log("info", 'Promotion salesman group assign salesman', promotionSalesmanGroup)
 
         const promotionCustomerGroup = await Models.PromotionsCustomersGroupCustomers.findOne({
           where:{
@@ -9427,7 +9427,7 @@ exports.promotion_discount_percentage_details = async function(req, res) {
             customer_id: customer_id
           }
         })
-        console.log('Promotions customer group customer', promotionCustomerGroup)
+        winston.log("info", 'Promotions customer group customer', promotionCustomerGroup)
 
         if(promotionSalesmanGroup == null && promotionCustomerGroup == null) {
           if(i==len_of_promotions-1) return res.end(JSON.stringify({ response: 1, message: Messages["en"].SUCCESS_FETCH, promotions: total_response}));
@@ -9441,7 +9441,7 @@ exports.promotion_discount_percentage_details = async function(req, res) {
           }
         })
 
-        console.log("invoice limit for salesman", salesmanInvoiceLimit)
+        winston.log("info", "invoice limit for salesman", salesmanInvoiceLimit)
 
 
         const customerInvoiceLimit = await Models.PromotionsCustomerInvoiceLimits.findOne({
@@ -9451,7 +9451,7 @@ exports.promotion_discount_percentage_details = async function(req, res) {
           }
         })
 
-        console.log('invoice limit for custoemr', customerInvoiceLimit)
+        winston.log("info", 'invoice limit for custoemr', customerInvoiceLimit)
 
         /*
           1. if salesman invoice limit is null, I have to store the invoice per limit to this table
@@ -9465,7 +9465,7 @@ exports.promotion_discount_percentage_details = async function(req, res) {
             salesman_id: salesman_id,
             invoice_limit: 0
           })
-          console.log('stored salesman promotion invoice limit data to invoice limit')
+          winston.log("info", 'stored salesman promotion invoice limit data to invoice limit')
         }
         else if(promotionResult.dataValues.invoice_per_salesman != -1 && salesmanInvoiceLimit.dataValues.invoice_limit >= promotionResult.dataValues.invoice_per_salesman){
           if(i==len_of_promotions-1) return res.end(JSON.stringify({ response: 1, message: Messages["en"].SUCCESS_FETCH, promotions: total_response}));
@@ -9478,7 +9478,7 @@ exports.promotion_discount_percentage_details = async function(req, res) {
             customer_id: customer_id,
             invoice_limit: 0
           })
-          console.log('Stored customer promotion invoice limit data to invoice limit')
+          winston.log("info", 'Stored customer promotion invoice limit data to invoice limit')
         }
         else if(promotionResult.dataValues.invoice_per_customer != -1 && customerInvoiceLimit.dataValues.invoice_limit >= promotionResult.dataValues.invoice_per_customer){
           if(i==len_of_promotions-1) return res.end(JSON.stringify({ response: 1, message: Messages["en"].SUCCESS_FETCH, promotions: total_response}));
@@ -9491,13 +9491,13 @@ exports.promotion_discount_percentage_details = async function(req, res) {
           }
         })
 
-        console.log("success ----------------------------------", percentagePromotion);
+        winston.log("info", "success ----------------------------------", percentagePromotion);
         total_response.push({ promotion: percentagePromotion })
         
         if(i==len_of_promotions-1) return res.end(JSON.stringify({ response: 1, message: Messages["en"].SUCCESS_FETCH, promotions: total_response}));
       }
       catch(err){
-          console.log(err)
+          winston.log("info", err)
           if(i==len_of_promotions-1) return res.end(JSON.stringify({ response: 1, message: Messages["en"].SUCCESS_FETCH, promotions: total_response}));
       }
     }
@@ -9510,7 +9510,7 @@ exports.promotion_output_items_details = async function(req, res) {
     //     "customer_id": "15",
     //     "request_type": "invoice"
     // }
-    console.log('Input ================>', req.body)
+    winston.log("info", 'Input ================>', req.body)
     const { salesman_id, customer_id } = req.body
     let promotions_ids = req.body.promotions_ids
 
@@ -9518,12 +9518,12 @@ exports.promotion_output_items_details = async function(req, res) {
 
     
     if (!Array.isArray(req.body.promotions_ids)) promotions_ids = [req.body.promotions_ids];
-    // console.log(salesman_id, " ", customer_id, " ", promotions_ids)
+    // winston.log("info", salesman_id, " ", customer_id, " ", promotions_ids)
     
     const len_of_promotions = promotions_ids.length
 
     const total_response = []
-    console.log(promotions_ids," ", len_of_promotions)
+    winston.log("info", promotions_ids," ", len_of_promotions)
     for(let i=0; i<len_of_promotions; i++){
       const promotion_id = promotions_ids[i];
       
@@ -9531,8 +9531,8 @@ exports.promotion_output_items_details = async function(req, res) {
         if(i==len_of_promotions-1) return res.end(JSON.stringify({ response: 1, message: Messages["en"].SUCCESS_FETCH, promotions: total_response}));
         continue
       }
-      console.log('promotion id', promotion_id)
-      console.log(i)
+      winston.log("info", 'promotion id', promotion_id)
+      winston.log("info", i)
       /*
         1. take salesman_group_id and customer_group_id, invoice_per_salesman and invoice_per_customer from promotions table
         2. check employee_id and salesman_group_id is in promotions_salesman_group_assign_salesman
@@ -9555,7 +9555,7 @@ exports.promotion_output_items_details = async function(req, res) {
           }
         })
 
-        console.log('Promotion row ================>', promotionResult)
+        winston.log("info", 'Promotion row ================>', promotionResult)
 
         /*
             * if promotion result null -> continue
@@ -9576,7 +9576,7 @@ exports.promotion_output_items_details = async function(req, res) {
             employee_id: salesman_id
           }
         })
-        console.log('Promotion salesman group assign salesman', promotionSalesmanGroup)
+        winston.log("info", 'Promotion salesman group assign salesman', promotionSalesmanGroup)
 
         const promotionCustomerGroup = await Models.PromotionsCustomersGroupCustomers.findOne({
           where:{
@@ -9584,7 +9584,7 @@ exports.promotion_output_items_details = async function(req, res) {
             customer_id: customer_id
           }
         })
-        console.log('Promotions customer group customer', promotionCustomerGroup)
+        winston.log("info", 'Promotions customer group customer', promotionCustomerGroup)
 
         if(promotionSalesmanGroup == null && promotionCustomerGroup == null) {
           if(i==len_of_promotions-1) return res.end(JSON.stringify({ response: 1, message: Messages["en"].SUCCESS_FETCH, promotions: total_response}));
@@ -9599,7 +9599,7 @@ exports.promotion_output_items_details = async function(req, res) {
           }
         })
 
-        console.log("invoice limit for salesman", salesmanInvoiceLimit)
+        winston.log("info", "invoice limit for salesman", salesmanInvoiceLimit)
 
 
         const customerInvoiceLimit = await Models.PromotionsCustomerInvoiceLimits.findOne({
@@ -9609,7 +9609,7 @@ exports.promotion_output_items_details = async function(req, res) {
           }
         })
 
-        console.log('invoice limit for custoemr', customerInvoiceLimit)
+        winston.log("info", 'invoice limit for custoemr', customerInvoiceLimit)
 
         /*
           1. if salesman invoice limit is null, I have to store the invoice per limit to this table
@@ -9623,7 +9623,7 @@ exports.promotion_output_items_details = async function(req, res) {
             salesman_id: salesman_id,
             invoice_limit: 0
           })
-          console.log('stored salesman promotion invoice limit data to invoice limit')
+          winston.log("info", 'stored salesman promotion invoice limit data to invoice limit')
         }
         else if(promotionResult.dataValues.invoice_per_salesman != -1 && salesmanInvoiceLimit.dataValues.invoice_limit >= promotionResult.dataValues.invoice_per_salesman){
           if(i==len_of_promotions-1) return res.end(JSON.stringify({ response: 1, message: Messages["en"].SUCCESS_FETCH, promotions: total_response}));
@@ -9636,7 +9636,7 @@ exports.promotion_output_items_details = async function(req, res) {
             customer_id: customer_id,
             invoice_limit: 0
           })
-          console.log('Stored customer promotion invoice limit data to invoice limit')
+          winston.log("info", 'Stored customer promotion invoice limit data to invoice limit')
         }
         else if(promotionResult.dataValues.invoice_per_customer != -1 && customerInvoiceLimit.dataValues.invoice_limit >= promotionResult.dataValues.invoice_per_customer){
           if(i==len_of_promotions-1) return res.end(JSON.stringify({ response: 1, message: Messages["en"].SUCCESS_FETCH, promotions: total_response}));
@@ -9664,15 +9664,15 @@ exports.promotion_output_items_details = async function(req, res) {
             }
           ]
         })
-        console.log("success ----------------------------------", allPromotionItems);
+        winston.log("info", "success ----------------------------------", allPromotionItems);
         if (allPromotionItems.length > 0) {
-          console.log("success ----------------------------------",allPromotionItems);
+          winston.log("info", "success ----------------------------------",allPromotionItems);
           total_response.push({ products: allPromotionItems })
         } 
         if(i==len_of_promotions-1) return res.end(JSON.stringify({ response: 1, message: Messages["en"].SUCCESS_FETCH, promotions: total_response}));
       }
       catch(err){
-        console.log('printing error==========> ', i, " ", err)
+        winston.log("info", 'printing error==========> ', i, " ", err)
       }
       
     }
@@ -9687,7 +9687,7 @@ exports.get_store_stock_list = function(req, res) {
 		req.body.store_id != null &&
 		req.body.store_id != ""
 	) {
-		console.log("req body ==============", req.body);
+		winston.log("info", "req body ==============", req.body);
 		Models.StockItems.findAll({
 			where: {
 				user_id: req.body.user_id,
