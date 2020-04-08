@@ -6076,7 +6076,8 @@ exports.start_end_employee_journey = function(req, res) {
 								result: employeeCheck
 							})
 						);
-					} else {
+          } 
+          else {
 						if (
 							req.body.battery_life != "" &&
 							req.body.battery_life != null &&
@@ -6115,7 +6116,8 @@ exports.start_end_employee_journey = function(req, res) {
 									);
 								}
 							);
-						} else {
+            } 
+            else {
 							res.end(
 								JSON.stringify({
 									response: 2,
@@ -6135,7 +6137,8 @@ exports.start_end_employee_journey = function(req, res) {
 					);
 				}
 			);
-		} else if (current_journey_status == "ended") {
+    } 
+    else if (current_journey_status == "ended") {
 			if (req.body.journey_id != null && req.body.journey_id != "") {
 				Models.EmployeeJourneys.update(
 					{
@@ -6147,13 +6150,15 @@ exports.start_end_employee_journey = function(req, res) {
 							id: req.body.journey_id
 						}
 					}
-				).then(
+        )
+        .then(
 					employeeJourneyUpdate => {
+            console.log("logging =============================>", employeeJourneyUpdate[0], " ", typeof(employeeJourneyUpdate))
 						res.end(
 							JSON.stringify({
 								response: 1,
 								message: Messages["en"].SUCCESS_UPDATE,
-								result: employeeJourneyUpdate
+								result: null
 							})
 						);
 					},
