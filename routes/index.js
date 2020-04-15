@@ -7251,10 +7251,7 @@ exports.sales_order_request_submit = async function(req, res) {
               3. Invoice Request Stock Items for each product of the cart
           */
 
-					if (
-						req.body.request_type == "invoice" &&
-						sales_order_arr[i].quantity != 0
-					) {
+					if (req.body.request_type == "invoice") {
 						try {
 							const stockItemData = await Models.StockItems.findOne({
 								where: {
