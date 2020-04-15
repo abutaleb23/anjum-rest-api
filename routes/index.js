@@ -7201,8 +7201,7 @@ exports.sales_order_request_submit = async function(req, res) {
 				if (
 					sales_order_arr[i].item_id &&
 					sales_order_arr[i].category_id &&
-					sales_order_arr[i].measurement_unit_id &&
-					sales_order_arr[i].quantity
+					sales_order_arr[i].measurement_unit_id
 				) {
 					console.log("q step 3");
 					let create_sales_req = {};
