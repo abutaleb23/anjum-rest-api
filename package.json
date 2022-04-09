@@ -18,7 +18,7 @@
     "fcm-node": "^1.5.1",
     "fcm-notification": "^2.0.0",
     "fs": "0.0.1-security",
-    "moment": "^2.24.0",
+    "moment": "^2.29.2",
     "mysql2": "^1.6.5",
     "path": "^0.12.7",
     "request": "^2.88.0",
